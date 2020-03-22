@@ -7,9 +7,15 @@ body {
 }
 
 #title-section {
-    position: relative;
-    margin-top: 150px;
+    position: absolute;
+    height: 100vh;
+    width: 100%;
+    top: 0;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
 }
 
 .title {
@@ -17,7 +23,6 @@ body {
 }
 
 .custom-btn {
-    margin-top: 250px;
     padding: 15px 15px;
     display: inline-block;
     cursor: pointer;
@@ -38,5 +43,4 @@ body {
 }
 
 #begin-btn {
-    margin: 40%;
 }
