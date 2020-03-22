@@ -1,0 +1,165 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Twistline Visualizer</title>
+
+        <!-- Favicon -->
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    </head>
+
+    <body>
+        <section id="title-section">
+            <h1 class="title">twistline visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Visualizer Scripts -->
+        <script src="src/canvas.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/microphone.js"></script>
+
+        <script>
+            //create canvas
+            var ctx = createCanvas('canvas1')
+
+            //double click fullscreen event listener
+            //Double Click to go FULLSCREEN
+            function getreqfullscreen() {
+                var root = document.documentElement
+                return (
+                    root.requestFullscreen ||
+                    root.webkitRequestFullscreen ||
+                    root.mozRequestFullScreen ||
+                    root.msRequestFullscreen
+                )
+            }
+
+            canvas.addEventListener('dblclick', function() {
+                //usage: getreqfullscreen().call(targetelement) // open full screen on targetelement
+
+                var globalreqfullscreen = getreqfullscreen() // get supported version of requestFullscreen()
+
+                globalreqfullscreen.call(document.documentElement)
+
+                $('#canvas1').css('cursor', 'none')
+            })
+
+            //key presses
+            document.addEventListener(
+                'keypress',
+                function(e) {
+                    if (e.keyCode == 49) {
+                        //1: white on black
+                        line_colour = rgb(255, 255, 255)
+                        background_colour = 0
+                    } else if (e.keyCode == 50) {
+                        //2: black on white
+                        line_colour = rgb(0, 0, 0)
+                        background_colour = 255
+                    }
+                },
+                false
+            )
+
+            //set to 128 for digitised effect, otherwise 512 is smooth
+            var mic = new Microphone(512)
+            ctx.lineWidth = 1.5
+
+            //particles
+            var particles = []
+            var mirror_particles = []
+            var num_particles = 120
+            var max_radius = h / 2
+
+            //colours
+            var background_colour = 0
+            var line_colour = rgb(255)
+
+            //add a number of particles to particles
+            for (i = 0; i < num_particles; i++) {
+                addParticle(i)
+                addMirrorParticle(i)
+            }
+
+            function addParticle(_i) {
+                var _angle = 0
+                var particle = {
+                    x: 0,
+                    y: 0,
+                    angle: _angle,
+                    radius: map(i, 0, num_particles, 0, max_radius),
+                }
+                particles.push(particle)
+            }
+
+            function addMirrorParticle(_i) {
+                var _angle = 0
+                var particle = {
+                    x: 0,
+                    y: 0,
+                    angle: _angle,
+                    radius: map(i, 0, num_particles, 0, max_radius),
+                }
+                mirror_particles.push(particle)
+            }
+
+            function drawParticles() {
+                for (i = 0; i < num_particles; i++) {
+                    p = particles[i]
+                    pm = mirror_particles[i]
+
+                    waveform = mic.mapWaveform(i, num_particles, 0, Math.PI / 2)
+
+                    //* ends in 5 = vertical, ends in 0 = horizontal
+                    p.x = w / 2 + p.radius * Math.cos((waveform + Math.PI / 2) * 300)
+
+                    p.y = h / 2 + p.radius * Math.sin((waveform + Math.PI / 2) * 300)
+
+                    pm.x = w / 2 + pm.radius * Math.cos((waveform + Math.PI / 2) * 310)
+
+                    pm.y = h / 2 + pm.radius * Math.sin((waveform + Math.PI / 2) * 310)
+                }
+            }
+
+            function drawConnections() {
+                for (i = 0; i < num_particles - 1; i++) {
+                    p1 = particles[i]
+                    p2 = particles[i + 1]
+                    pm1 = mirror_particles[i]
+                    pm2 = mirror_particles[i + 1]
+
+                    ctx.line(p1.x, p1.y, p2.x, p2.y)
+                    ctx.line(pm1.x, pm1.y, pm2.x, pm2.y)
+                }
+            }
+
+            //requests animation frame
+            function draw() {
+                frameRate = 120
+
+                ctx.background(
+                    background_colour,
+                    map(mic.getRMS(mic.spectrum), 0, 100, 0.25, 0.02)
+                )
+                ctx.strokeStyle = line_colour
+
+                drawParticles()
+                drawConnections()
+            }
+        </script>
+
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>

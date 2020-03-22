@@ -1,0 +1,358 @@
+<html>
+    <head>
+        <title>signals</title>
+    </head>
+    <body>
+        <section id="title-section">
+            <h1 class="title">signals visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <script src="src/three.min.js"></script>
+        <script src="src/mic2.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/js/controls/OrbitControls.js"></script>
+
+        <script src="src/js/THREEx.FullScreen.js"></script>
+
+        <script src="src/js/postprocessing/EffectComposer.js"></script>
+        <script src="src/js/postprocessing/RenderPass.js"></script>
+        <script src="src/js/postprocessing/ShaderPass.js"></script>
+        <script src="src/js/postprocessing/MaskPass.js"></script>
+        <script src="src/js/shaders/CopyShader.js"></script>
+        <script src="src/js/shaders/FilmShader.js"></script>
+        <script src="src/js/shaders/RGBShiftShader.js"></script>
+        <script src="src/shaders/BadTVShader.js"></script>
+        <script src="src/shaders/StaticShader.js"></script>
+        <script src="src/js/libs/dat.gui.min.js"></script>
+
+        <script>
+            //enable fullscreen
+            THREEx.FullScreen.bindKey({
+                dblclick: true,
+            })
+
+            document.addEventListener(
+                'dbclick',
+                function(e) {
+                    THREEx.FullScreen.request()
+                    init()
+                },
+                false
+            )
+
+            //variables
+            let camera, scene, renderer
+
+            //geometries
+            var geometry, material
+            var num_lines, num_points, max_dist, velocity
+            var lines = []
+            var current_index = 0
+
+            //mic
+            var mic = new Microphone(512)
+            var volume, peak_vol
+            var waveform_intensity = window.innerHeight / 2.5
+
+            //shader
+            var composer
+            var shaderTime = 0
+            var badTVParams, badTVPass
+            var staticParams, staticPass
+            var rgbParams, rgbPass
+            var filmParams, filmPass
+            var renderPass, copyPass
+            var gui
+            var pnoise, globalParams
+
+            init()
+            initEffects()
+            animate()
+
+            function init() {
+                //scene / camera / orbit controls
+                scene = new THREE.Scene()
+                camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    3,
+                    10
+                )
+                camera.position.x = -4.5
+                camera.position.y = 2
+                camera.position.z = 4.5
+                camera.lookAt(new THREE.Vector3(0, 0, 0))
+                var controls = new THREE.OrbitControls(camera)
+                controls.update()
+
+                //renderer
+                renderer = new THREE.WebGLRenderer({antialias: true})
+                renderer.setPixelRatio(window.devicePixelRatio)
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                document.body.appendChild(renderer.domElement)
+
+                renderer.domElement.id = 'three-canvas'
+
+                //colors
+                var color = new THREE.Color(0xffffff)
+
+                //fog
+                scene.background = 0x000000
+                //scene.fog = new THREE.Fog(0x000000, 4, 8);
+
+                scene.fog = new THREE.FogExp2(0x000000, 0.15)
+
+                //line
+                let length = 4.8
+                let points = []
+                num_points = 128
+
+                //num_lines, max_dist and velocity
+                //(49, 4.8, 0.1), (241, 4.8, 0.02),
+
+                num_lines = 49
+                max_dist = 4.8
+                velocity = 0.1
+
+                //fill lines array with line geometry
+                for (j = 0; j < num_lines; j++) {
+                    material = new THREE.LineBasicMaterial({color: color})
+                    geometry = new THREE.Geometry()
+
+                    //fill points array with evenly distributed vectors
+                    for (i = 0; i < num_points; i++) {
+                        let x = (length / (num_points - 1)) * i
+
+                        var point = new THREE.Vector3(x, 0, 0)
+                        points[i] = point
+                        geometry.vertices[i] = points[i]
+                    }
+
+                    //create line and add it to lines array
+                    var line = new THREE.Line(geometry, material)
+                    let z = map(j, 0, num_lines, -max_dist / 2, max_dist / 2, true)
+                    line.position.set(0, 0, z)
+                    lines[j] = line
+
+                    //add line to scene
+                    lines[j].translateX(-length / 2)
+                    scene.add(lines[j])
+                }
+
+                window.addEventListener('resize', onResize, false)
+                onResize()
+            }
+
+            function initEffects() {
+                renderPass = new THREE.RenderPass(scene, camera)
+                badTVPass = new THREE.ShaderPass(THREE.BadTVShader)
+                rgbPass = new THREE.ShaderPass(THREE.RGBShiftShader)
+                filmPass = new THREE.ShaderPass(THREE.FilmShader)
+                staticPass = new THREE.ShaderPass(THREE.StaticShader)
+                copyPass = new THREE.ShaderPass(THREE.CopyShader)
+
+                //set shader uniforms
+                filmPass.uniforms.grayscale.value = 0
+
+                //Init DAT GUI control panel
+                badTVParams = {
+                    mute: true,
+                    show: true,
+                    distortion: 1.3,
+                    distortion2: 1.5,
+                    speed: 0.07,
+                    rollSpeed: 0.0,
+                }
+
+                staticParams = {
+                    show: true,
+                    amount: 0.07,
+                    size: 3,
+                }
+
+                rgbParams = {
+                    show: true,
+                    amount: 0.005,
+                    angle: 2,
+                }
+
+                filmParams = {
+                    show: true,
+                    count: 900,
+                    sIntensity: 0.3,
+                    nIntensity: 0.4,
+                }
+
+                onToggleShaders()
+                onParamsChange()
+            }
+
+            function onParamsChange() {
+                //copy params into shader uniforms
+                badTVPass.uniforms['distortion'].value = badTVParams.distortion
+                badTVPass.uniforms['distortion2'].value = badTVParams.distortion2
+                badTVPass.uniforms['speed'].value = badTVParams.speed
+                badTVPass.uniforms['rollSpeed'].value = badTVParams.rollSpeed
+
+                staticPass.uniforms['amount'].value = staticParams.amount
+                staticPass.uniforms['size'].value = staticParams.size
+
+                rgbPass.uniforms['angle'].value = rgbParams.angle * Math.PI
+                rgbPass.uniforms['amount'].value = rgbParams.amount
+
+                filmPass.uniforms['sCount'].value = filmParams.count
+                filmPass.uniforms['sIntensity'].value = filmParams.sIntensity
+                filmPass.uniforms['nIntensity'].value = filmParams.nIntensity
+            }
+
+            function onToggleShaders() {
+                //Add Shader Passes to Composer
+                //order is important
+                composer = new THREE.EffectComposer(renderer)
+                composer.addPass(renderPass)
+
+                if (filmParams.show) {
+                    composer.addPass(filmPass)
+                }
+
+                if (badTVParams.show) {
+                    composer.addPass(badTVPass)
+                }
+
+                if (rgbParams.show) {
+                    composer.addPass(rgbPass)
+                }
+
+                if (staticParams.show) {
+                    composer.addPass(staticPass)
+                }
+
+                composer.addPass(copyPass)
+                copyPass.renderToScreen = true
+            }
+
+            function updateEffects() {
+                if (volume < peak_vol - 20) {
+                    badTVParams = {
+                        mute: true,
+                        show: true,
+                        distortion: map(volume, 0, 100, 0.5, 2),
+                        distortion2: map(volume, 0, 100, 0, 1),
+                        speed: map(volume, 0, 100, 0, 0.2),
+                        rollSpeed: 0.0,
+                    }
+
+                    staticParams = {
+                        show: true,
+                        amount: 0.1,
+                        size: 2,
+                    }
+
+                    rgbParams = {
+                        show: true,
+                        amount: map(volume, 0, 100, 0, 0.004),
+                        angle: 0,
+                    }
+
+                    filmParams = {
+                        show: true,
+                        count: 900,
+                        sIntensity: 0.3,
+                        nIntensity: 0.4,
+                    }
+                } else {
+                    badTVParams = {
+                        mute: true,
+                        show: true,
+                        distortion: map(volume, 0, 100, 3, 5),
+                        distortion2: map(volume, 0, 100, 1, 1.2),
+                        speed: map(volume, 0, 100, 0.2, 0.8),
+                        rollSpeed: 1,
+                    }
+
+                    staticParams = {
+                        show: true,
+                        amount: 0.12,
+                        size: 2,
+                    }
+
+                    rgbParams = {
+                        show: true,
+                        amount: map(volume, 0, 100, 0.004, 0.007),
+                        angle: 0,
+                    }
+
+                    filmParams = {
+                        show: true,
+                        count: 900,
+                        sIntensity: 0.3,
+                        nIntensity: 0.4,
+                    }
+                }
+                onParamsChange()
+            }
+
+            function updateCamera() {
+                camera.fov = map(volume, 0, 100, 60, 40)
+                camera.updateProjectionMatrix()
+            }
+
+            function travel() {
+                for (k = 0; k < num_lines; k++) {
+                    if (lines[k].position.z <= -max_dist / 2) {
+                        current_index = k
+                        waveformify(current_index)
+                        lines[k].position.z = max_dist / 2
+                    } else {
+                        lines[k].position.z -= velocity
+                    }
+                }
+            }
+
+            function waveformify(current_index) {
+                //compute waveform at this instant and apply to current_index line (at the front)
+                for (i = 0; i < num_points; i++) {
+                    waveform = mic.mapWaveform(i, num_points, 0, waveform_intensity)
+                    lines[current_index].geometry.vertices[i].y = waveform
+                }
+                lines[current_index].geometry.verticesNeedUpdate = true
+            }
+
+            function animate() {
+                volume = mic.volume
+                peak_vol = mic.peak_volume
+
+                travel()
+                updateEffects()
+                updateCamera()
+
+                shaderTime += 0.1
+                badTVPass.uniforms['time'].value = shaderTime
+                filmPass.uniforms['time'].value = shaderTime
+                staticPass.uniforms['time'].value = shaderTime
+
+                requestAnimationFrame(animate)
+                composer.render(0.1)
+            }
+
+            function onResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                camera.aspect = window.innerWidth / window.innerHeight
+                camera.updateProjectionMatrix()
+            }
+        </script>
+    </body>
+</html>

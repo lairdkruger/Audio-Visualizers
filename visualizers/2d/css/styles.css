@@ -1,0 +1,42 @@
+body {
+    background: black;
+    color: white;
+    font-family: 'VT323', monospace;
+    margin: auto;
+    text-align: center;
+}
+
+#title-section {
+    position: relative;
+    margin-top: 150px;
+    text-align: center;
+}
+
+.title {
+    font-size: 2.4rem;
+}
+
+.custom-btn {
+    margin-top: 250px;
+    padding: 15px 15px;
+    display: inline-block;
+    cursor: pointer;
+    outline: 1px solid #fff;
+    font-size: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.custom-btn:active {
+    background-color: white;
+    color: black;
+}
+
+#begin-btn {
+    margin: 40%;
+}

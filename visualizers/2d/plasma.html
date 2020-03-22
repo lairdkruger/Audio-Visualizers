@@ -1,0 +1,203 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Plasma Visualizer</title>
+
+        <!-- Favicon -->
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    </head>
+
+    <body>
+        <section id="title-section">
+            <h1 class="title">plasma visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Visualizer Scripts -->
+        <script src="src/canvas.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/microphone.js"></script>
+
+        <script>
+            //create canvas
+            var ctx = createCanvas('canvas1')
+
+            //double click fullscreen event listener
+            //Double Click to go FULLSCREEN
+            function getreqfullscreen() {
+                var root = document.documentElement
+                return (
+                    root.requestFullscreen ||
+                    root.webkitRequestFullscreen ||
+                    root.mozRequestFullScreen ||
+                    root.msRequestFullscreen
+                )
+            }
+
+            canvas.addEventListener('dblclick', function() {
+                //usage: getreqfullscreen().call(targetelement) // open full screen on targetelement
+
+                var globalreqfullscreen = getreqfullscreen() // get supported version of requestFullscreen()
+
+                globalreqfullscreen.call(document.documentElement)
+
+                $('#canvas1').css('cursor', 'none')
+            })
+
+            document.addEventListener(
+                'keypress',
+                function(e) {
+                    if (e.keyCode == 49) {
+                        //1: basic black and white
+                        line_colour = rgb(255, 255, 255)
+                        gradient = ctx.createRadialGradient(
+                            w / 2,
+                            h / 2,
+                            w / 2,
+                            w / 2,
+                            h / 2,
+                            w / 4
+                        )
+                        gradient.addColorStop(1, rgb(255, 255, 255))
+                        gradient.addColorStop(0, rgb(235, 235, 235))
+                    } else if (e.keyCode == 50) {
+                        //2: black and red
+                        line_colour = rgb(250, 0, 0)
+                        gradient = ctx.createRadialGradient(
+                            w / 2,
+                            h / 2,
+                            w / 2,
+                            w / 2,
+                            h / 2,
+                            w / 4
+                        )
+                        gradient.addColorStop(1, rgb(255, 120, 0))
+                        gradient.addColorStop(0, rgb(255, 0, 0))
+                    } else if (e.keyCode == 55) {
+                        //7: symmetry number: 2
+                        symmetry_num = 2
+                    } else if (e.keyCode == 56) {
+                        //8: symmetry number: 4
+                        symmetry_num = 4
+                    } else if (e.keyCode == 57) {
+                        //9: symmetry number: 8
+                        symmetry_num = 8
+                    } else if (e.keyCode == 48) {
+                        //0: symmetry number: 20
+                        symmetry_num = 20
+                    }
+                },
+                false
+            )
+
+            //set to 128 for digitised effect, otherwise 512 is smooth
+            var mic = new Microphone(128)
+
+            //number of lines of symmetry
+            var symmetry_num = 2
+
+            //particles
+            var particles = []
+            var num_particles = 160
+            var radius = h / 3
+
+            //initial colours
+            var line_colour = rgb(255, 255, 255)
+            var gradient = ctx.createRadialGradient(
+                w / 2,
+                h / 2,
+                w / 2,
+                w / 2,
+                h / 2,
+                w / 4
+            )
+            gradient.addColorStop(1, rgb(255, 255, 255))
+            gradient.addColorStop(0, rgb(235, 235, 235))
+
+            //add a number of particles to particles
+            for (i = 0; i < num_particles; i++) {
+                addParticle(i)
+            }
+
+            function addParticle(_i) {
+                var _angle = radians(distributeAngles(i, num_particles)) + Math.PI / 2
+                var particle = {
+                    x: 0,
+                    y: 0,
+                    angle: _angle,
+                    radius: radius,
+                }
+                particles.push(particle)
+            }
+
+            function drawParticles() {
+                for (j = 0; j < symmetry_num; j++) {
+                    for (i = 0; i < num_particles / symmetry_num; i++) {
+                        var particle_id = (num_particles / symmetry_num) * j
+                        waveform = mic.mapWaveform(
+                            i,
+                            num_particles / symmetry_num,
+                            1,
+                            h / 2
+                        )
+
+                        if (j % 2 == 0) {
+                            particle = particle_id + num_particles / symmetry_num - i - 1
+                            p = particles[particle]
+                        } else {
+                            p = particles[particle_id + i]
+                        }
+
+                        p.x = w / 2 + Math.cos(p.angle) * (p.radius * waveform)
+                        p.y = h / 2 + Math.sin(p.angle) * (p.radius * waveform)
+                    }
+                }
+            }
+
+            function drawConnections() {
+                for (i = 0; i < num_particles - 1; i++) {
+                    p1 = particles[i]
+                    p2 = particles[i + 1]
+                    ctx.line(p1.x, p1.y, p2.x, p2.y)
+                }
+
+                p1 = particles[0]
+                p2 = particles[num_particles - 1]
+                ctx.line(p1.x, p1.y, p2.x, p2.y)
+            }
+
+            //requests animation frame
+            function draw() {
+                frameRate = 120
+
+                if (mic.getRMS(mic.spectrum) > mic.peak_volume - 20) {
+                    ctx.lineWidth = 1000
+                    ctx.strokeStyle = rgb(0)
+                    ctx.fillStyle = gradient
+                    ctx.fillRect(0, 0, w, h)
+                } else {
+                    ctx.lineWidth = 2
+                    ctx.strokeStyle = line_colour
+                    ctx.background(0, map(mic.getRMS(mic.spectrum), 0, 100, 0.25, 0.05))
+                }
+
+                drawParticles()
+                drawConnections()
+            }
+        </script>
+
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>

@@ -1,0 +1,276 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Arachnid Visualizer</title>
+
+        <!-- Favicon -->
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    </head>
+
+    <body>
+        <section id="title-section">
+            <h1 class="title">arachnid visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Visualizer Scripts -->
+        <script src="src/canvas.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/microphone.js"></script>
+        <script src="src/palettes.js"></script>
+
+        <script>
+            //create canvas
+            var ctx = createCanvas('canvas1')
+
+            //double click fullscreen event listener
+            //Double Click to go FULLSCREEN
+            function getreqfullscreen() {
+                var root = document.documentElement
+                return (
+                    root.requestFullscreen ||
+                    root.webkitRequestFullscreen ||
+                    root.mozRequestFullScreen ||
+                    root.msRequestFullscreen
+                )
+            }
+
+            canvas.addEventListener('dblclick', function() {
+                //usage: getreqfullscreen().call(targetelement) // open full screen on targetelement
+
+                var globalreqfullscreen = getreqfullscreen() // get supported version of requestFullscreen()
+
+                globalreqfullscreen.call(document.documentElement)
+
+                $('#canvas1').css('cursor', 'none')
+            })
+
+            document.addEventListener(
+                'keypress',
+                function(e) {
+                    if (e.keyCode == 49) {
+                        //1: standard: black and white
+                        mode = 'standard'
+                        line_colour = rgb(255)
+                    } else if (e.keyCode == 50) {
+                        //2: palette: violent red
+                        mode = 'palette'
+                    } else if (e.keyCode == 51) {
+                        //3: palette: bella pink
+                        mode = 'palette'
+                        palette = loadPalette('bella_pink')
+                    } else if (e.keyCode == 52) {
+                        //4: palette: garden green
+                        mode = 'palette'
+                        palette = loadPalette('garden_green')
+                    } else if (e.keyCode == 53) {
+                        //5: lit: neons
+                        mode = 'lit'
+                    } else if (e.keyCode == 54) {
+                        //6: lit II: neons
+                        mode = 'lit II'
+                    } else if (e.keyCode == 55) {
+                        //7: lit III: neons
+                        mode = 'lit III'
+                    }
+                },
+                false
+            )
+
+            ctx.lineWidth = 1
+
+            //set to 128 for digitised effect, otherwise 512 is smooth
+            var mic = new Microphone(256)
+
+            //number of lines of symmetry
+            var symmetry_num = 2
+
+            //particles
+            //20 particles : 8 rings
+            var particles = []
+            var num_particles = 20
+            var num_rings = 8
+            var max_radius = h / 2
+            var gap = max_radius / num_rings
+            var waveform_array = []
+            var waveform_intensity = h / 1.5
+            var explode = 1
+
+            //color setup
+            var line_color = rgb(255)
+            var palette = loadPalette('violent_red')
+            var hue = 0
+
+            //color modes: standard, palette, lit, lit II, lit III
+            var mode = 'standard'
+
+            //add a number of particles to particles
+            for (i = 0; i < num_rings; i++) {
+                particles.push([])
+                for (j = 0; j < num_particles; j++) {
+                    addParticle(i, j)
+                }
+            }
+
+            function addParticle(_i, j) {
+                //magic number: 80 : 1.62, 20 : 1.724
+                var _angle = radians(distributeAngles(j, num_particles)) + 1.724
+                var particle = {
+                    x: 0,
+                    y: 0,
+                    angle: _angle,
+                    radius: max_radius - gap * i,
+                }
+
+                particles[i].push(particle)
+            }
+
+            function drawParticles(explode) {
+                //calculate first ring shape using mic.js
+                for (j = 0; j < symmetry_num; j++) {
+                    for (i = 0; i < num_particles / symmetry_num; i++) {
+                        particle_id = (num_particles / symmetry_num) * j
+                        waveform = mic.mapWaveform(
+                            i,
+                            num_particles / symmetry_num,
+                            1,
+                            waveform_intensity
+                        )
+
+                        waveform_array[i] = waveform
+
+                        if (j % 2 == 0) {
+                            //counts downwards from particle_id if j is even (for symmetry)
+                            particle = particle_id + num_particles / symmetry_num - i - 1
+                            p = particles[0][particle]
+                        } else {
+                            //counts upwards from particle_id is j is odd (for symmetry)
+                            p = particles[0][particle_id + i]
+                        }
+
+                        p.x = w / 2 + Math.cos(p.angle) * (p.radius * waveform * explode)
+                        p.y = h / 2 + Math.sin(p.angle) * (p.radius * waveform * explode)
+                    }
+                }
+
+                //use waveform_array to calculate other rings shapes
+                for (k = 1; k < num_rings; k++) {
+                    for (j = 0; j < symmetry_num; j++) {
+                        for (i = 0; i < num_particles / symmetry_num; i++) {
+                            particle_id = (num_particles / symmetry_num) * j
+
+                            if (j % 2 == 0) {
+                                //counts downwards from particle_id if j is even (for symmetry)
+                                particle =
+                                    particle_id + num_particles / symmetry_num - i - 1
+                                p = particles[k][particle]
+                            } else {
+                                //counts upwards from particle_id is j is odd (for symmetry)
+                                p = particles[k][particle_id + i]
+                            }
+
+                            p.x =
+                                w / 2 +
+                                Math.cos(p.angle) *
+                                    (p.radius * waveform_array[i] * explode)
+                            p.y =
+                                h / 2 +
+                                Math.sin(p.angle) *
+                                    (p.radius * waveform_array[i] * explode)
+                        }
+                    }
+                }
+            }
+
+            function drawConnections() {
+                for (j = 0; j < num_rings; j++) {
+                    for (i = 0; i < num_particles; i++) {
+                        max_distance = map(mic.getRMS(mic.spectrum), 0, 100, 0, 15) ** 2
+                        p1 = particles[j][i]
+
+                        for (k = 0; k < num_rings; k++) {
+                            for (l = 0; l < num_particles; l++) {
+                                p2 = particles[k][l]
+
+                                //draw line between them if they're close
+                                current_distance = dist(p1.x, p1.y, p2.x, p2.y)
+                                if (current_distance <= max_distance) {
+                                    ctx.line(p1.x, p1.y, p2.x, p2.y)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ctx.lineWidth = 1
+
+            //requests animation frame
+            function draw() {
+                frameRate = 120
+                volume = mic.getRMS(mic.spectrum)
+                peak_vol = mic.peak_volume
+
+                ctx.background(0, map(volume, 0, 100, 0.6, 0.07))
+
+                if (mode == 'standard') {
+                    ctx.strokeStyle = line_color
+                } else if (mode == 'palette') {
+                    color = Math.ceil(map(volume, 0, 100, 0, palette.length, true))
+                    ctx.strokeStyle = palette[color]
+                } else if (mode == 'lit') {
+                    lightness = map(volume, 0, 100, 0, 70, true)
+                    hue = randomInt(0, 360)
+                    ctx.strokeStyle = hsl(hue, 70, lightness)
+                } else if (mode == 'lit II') {
+                    lightness = map(volume, 0, 100, 40, 70, true)
+                    add = map(volume, 0, 100, 0, 3.5) ** 3
+
+                    if (volume > peak_vol - 20) {
+                        explode = 2
+                        hue = randomInt(0, 360)
+                    } else {
+                        if (hue == 360) {
+                            hue = 0
+                        } else {
+                            hue += add
+                        }
+                    }
+
+                    ctx.strokeStyle = hsl(hue, 70, lightness)
+                } else if (mode == 'lit III') {
+                    lightness = map(volume, 0, 100, 40, 70, true)
+                    add = map(volume, 0, 100, 0, 3) ** 3
+                    ctx.lineWidth = map(volume, 0, 100, 0, 10)
+                    if (hue == 360) {
+                        hue = 0
+                    } else {
+                        hue += add
+                    }
+                    ctx.strokeStyle = hsl(hue, 70, lightness)
+                }
+
+                if (volume > peak_vol - 20) {
+                    explode = 2
+                }
+
+                drawParticles(explode)
+                drawConnections()
+            }
+        </script>
+
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>

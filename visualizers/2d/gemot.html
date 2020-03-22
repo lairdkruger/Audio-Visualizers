@@ -1,0 +1,185 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Gemot Visualizer</title>
+
+        <!-- Favicon -->
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    </head>
+
+    <body>
+        <section id="title-section">
+            <h1 class="title">gemot visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Visualizer Scripts -->
+        <script src="src/canvas.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/microphone.js"></script>
+
+        <script>
+            //create canvas
+            var ctx = createCanvas('canvas1')
+
+            //double click fullscreen event listener
+            //Double Click to go FULLSCREEN
+            function getreqfullscreen() {
+                var root = document.documentElement
+                return (
+                    root.requestFullscreen ||
+                    root.webkitRequestFullscreen ||
+                    root.mozRequestFullScreen ||
+                    root.msRequestFullscreen
+                )
+            }
+
+            canvas.addEventListener('dblclick', function() {
+                //usage: getreqfullscreen().call(targetelement) // open full screen on targetelement
+
+                var globalreqfullscreen = getreqfullscreen() // get supported version of requestFullscreen()
+
+                globalreqfullscreen.call(document.documentElement)
+
+                $('#canvas1').css('cursor', 'none')
+            })
+
+            ctx.lineWidth = 1
+
+            //set to 128 for digitised effect, otherwise 512 is smooth
+            var mic = new Microphone(256)
+
+            //number of lines of symmetry
+            var symmetry_num = 8
+
+            //particles
+            var particles = []
+            var num_particles = 96
+            var radius = h / 3
+            var particle_size = 5
+            var max_distance = 0
+            var explode = 1
+
+            //initial colours
+            var line_colour = rgb(255, 255, 255)
+            var gradient = ctx.createRadialGradient(
+                w / 2,
+                h / 2,
+                w / 2,
+                w / 2,
+                h / 2,
+                w / 4
+            )
+            gradient.addColorStop(1, rgb(255, 255, 255))
+            gradient.addColorStop(0, rgb(235, 235, 235))
+
+            //add a number of particles to particles
+            for (i = 0; i < num_particles; i++) {
+                addParticle(i)
+            }
+
+            function addParticle(_i) {
+                var _angle = radians(distributeAngles(i, num_particles)) + 0.025
+                var particle = {
+                    x: 0,
+                    y: 0,
+                    angle: _angle,
+                    radius: radius,
+                }
+                particles.push(particle)
+            }
+
+            function drawParticles() {
+                for (j = 0; j < symmetry_num; j++) {
+                    for (i = 0; i < num_particles / symmetry_num; i++) {
+                        var particle_id = (num_particles / symmetry_num) * j
+                        waveform = mic.mapWaveform(
+                            i,
+                            num_particles / symmetry_num,
+                            1,
+                            h / 2
+                        )
+
+                        if (j % 2 == 0) {
+                            particle = particle_id + num_particles / symmetry_num - i - 1
+                            p = particles[particle]
+                        } else {
+                            particle = particle_id + i
+                            p = particles[particle]
+                        }
+
+                        p.x = w / 2 + Math.cos(p.angle) * (p.radius * waveform) * explode
+                        p.y = h / 2 + Math.sin(p.angle) * (p.radius * waveform) * explode
+
+                        ctx.fillEllipse(p.x, p.y, particle_size)
+                    }
+                }
+            }
+
+            function drawConnections(particle) {
+                max_distance =
+                    map(mic.getRMS(mic.spectrum), 0, 100, 0, h / 100) ** 2 * explode
+                for (i = 0; i < num_particles; i++) {
+                    for (j = 0; j < num_particles; j++) {
+                        p1 = particles[i]
+                        p2 = particles[j]
+
+                        //check distances
+                        //draw line between them if they're close
+                        current_distance = dist(p1.x, p1.y, p2.x, p2.y)
+
+                        if (current_distance <= max_distance) {
+                            ctx.line(p1.x, p1.y, p2.x, p2.y)
+                        }
+                    }
+                }
+            }
+
+            //requests animation frame
+            function draw() {
+                frameRate = 120
+                volume = mic.getRMS(mic.spectrum)
+                peak_vol = mic.peak_volume
+
+                if (volume < peak_vol - 50) {
+                    symmetry_num = 4
+                    line_colour = rgb(255, 255, 255)
+                    background_colour = 0
+                    ctx.background(background_colour, map(volume, 0, 100, 0.25, 0.02))
+                    explode = 1
+                } else if (volume < peak_vol - 35) {
+                    symmetry_num = 8
+                    line_colour = rgb(255, 255, 255)
+                    background_colour = 0
+                    ctx.background(background_colour, map(volume, 0, 100, 0.25, 0.02))
+                    explode = 1
+                } else if (volume > peak_vol - 20) {
+                    symmetry_num = 16
+                    line_colour = rgb(0, 0, 0)
+                    background_colour = 255
+                    ctx.background(background_colour, 1)
+                    explode = 1.5
+                }
+
+                ctx.strokeStyle = line_colour
+
+                drawParticles()
+                drawConnections()
+            }
+        </script>
+
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>

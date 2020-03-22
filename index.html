@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+        <meta
+            name="description"
+            content="A collection of real-time audio visualizers for Chrome."
+        />
+        <meta name="author" content="Newfoundland Studio" />
+        <meta property="og:image" content="images/thumbnail.png" />
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:url"
+            content="https://lairdkruger.github.io/Audio-Visualizers/"
+        />
+        <meta property="og:title" content="Audio Visualizers" />
+        <meta
+            property="og:description"
+            content="A collection of real-time audio visualizers for Chrome."
+        />
+
+        <title>Audio Visualizers</title>
+
+        <!-- Bootstrap -->
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+            integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+            crossorigin="anonymous"
+        />
+        <script
+            src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"
+        ></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Favicon -->
+        <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    </head>
+
+    <body>
+        <section id="all">
+            <section id="title-section">
+                <h1 id="title" class="title">audio<br />visualizers</h1>
+                <div id="begin-btn" class="custom-btn">click to begin</div>
+
+                <div id="hide-btn" class="custom-btn">click to hide</div>
+            </section>
+
+            <section id="info-section">
+                <p class="infomation">
+                    below are some audio visualizers that run in chrome. each one uses the
+                    computer's selected audio input.
+                </p>
+                <p class="infomation">
+                    these were created by Newfoundland Studio to showcase the
+                    possibilities of webGL powered web experiences.
+                </p>
+                <p class="infomation">double click for full-screen.</p>
+                <p class="infomation">esc to exit.</p>
+                <p class="infomation">number keys change some colors.</p>
+            </section>
+
+            <section id="grid-section">
+                <div class="container">
+                    <div class="row">
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="plasma thumbnail"
+                                style="background-image: url(images/plasma.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="twistline thumbnail"
+                                style="background-image: url(images/twistline.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="vinyl thumbnail"
+                                style="background-image: url(images/vinyl.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="arachnid thumbnail"
+                                style="background-image: url(images/arachnid.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="lollipop thumbnail"
+                                style="background-image: url(images/lollipop.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="gemot thumbnail"
+                                style="background-image: url(images/gemot.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="lines thumbnail"
+                                style="background-image: url(images/lines.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="storm thumbnail"
+                                style="background-image: url(images/storm.jpg)"
+                            ></div>
+                        </div>
+                        <div class="cell col-sm-12 col-md-6 col-lg-4">
+                            <div
+                                class="signals thumbnail"
+                                style="background-image: url(images/signals.jpg)"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="footer-section">
+                <p class="author">by</p>
+                <a class="links" href="https://newfoundland.studio" target="_blank"
+                    >Newfoundland</a
+                >
+            </section>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+        <!-- Javascripts -->
+        <!-- <script src="js/microphone.js" charset="utf-8"></script> -->
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>

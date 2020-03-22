@@ -1,0 +1,561 @@
+<html>
+    <head>
+        <title>cosmiclism</title>
+        <style>
+            body {
+                margin: 0;
+            }
+            canvas {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <script src="src/three.min.js"></script>
+        <script src="src/microphone.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/js/controls/OrbitControls.js"></script>
+
+        <script src="src/js/THREEx.FullScreen.js"></script>
+
+        <script src="src/js/postprocessing/EffectComposer.js"></script>
+        <script src="src/js/postprocessing/RenderPass.js"></script>
+        <script src="src/js/postprocessing/ShaderPass.js"></script>
+        <script src="src/js/postprocessing/MaskPass.js"></script>
+        <script src="src/js/shaders/CopyShader.js"></script>
+        <script src="src/js/shaders/FilmShader.js"></script>
+        <script src="src/js/shaders/RGBShiftShader.js"></script>
+        <script src="src/shaders/BadTVShader.js"></script>
+        <script src="src/shaders/StaticShader.js"></script>
+
+        <script>
+            //enable fullscreen
+            THREEx.FullScreen.bindKey({
+                dblclick: true,
+            })
+
+            document.addEventListener(
+                'dbclick',
+                function(e) {
+                    THREEx.FullScreen.request()
+                    init()
+                },
+                false
+            )
+
+            //variables
+            let camera, scene, renderer
+            var camera_pivot
+            var spotLight, sunLight
+
+            //geometries
+            var sun_geometry, sun_ref_geometry, sun
+            var camera_pivot, camera_rot_speed
+            var planet1_pivot, planet_rot_speed
+            var planet2_pivot, planet2_rot_speed
+            var planet3_pivot, planet3_rot_speed
+            var moon1_pivot, moon_1_rot_speed
+            var moon2_pivot, moon_2_rot_speed
+            var moon3_pivot, moon_3_rot_speed
+            var moon4_pivot, moon_4_rot_speed
+            var moon5_pivot, moon_5_rot_speed
+            var moon6_pivot, moon_6_rot_speed
+
+            var num_vert
+
+            //mic
+            var mic = new Microphone(512)
+            var volume, peak_vol
+            var waveform_intensity = window.innerHeight * 4
+
+            //shader
+            var composer
+            var shaderTime = 0
+            var badTVParams, badTVPass
+            var staticParams, staticPass
+            var rgbParams, rgbPass
+            var filmParams, filmPass
+            var renderPass, copyPass
+            var gui
+            var pnoise, globalParams
+
+            init()
+            initEffects()
+            animate()
+
+            function init() {
+                //scene / camera and orbit controls
+                scene = new THREE.Scene()
+                camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.05,
+                    100
+                )
+                camera.position.x = 0
+                camera.position.y = 3.5
+                camera.position.z = 9
+                camera.lookAt(new THREE.Vector3(0, 0, 0))
+
+                var controls = new THREE.OrbitControls(camera)
+                controls.update()
+
+                camera_pivot = new THREE.Object3D()
+                scene.add(camera_pivot)
+                camera_pivot.add(camera)
+
+                //renderer
+                renderer = new THREE.WebGLRenderer({antialias: true})
+                renderer.setPixelRatio(window.devicePixelRatio)
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                document.body.appendChild(renderer.domElement)
+
+                sunLight = new THREE.PointLight(0xffffff, 1)
+                spotLight = new THREE.SpotLight(0xffffff, 1, 7.43, Math.PI / 24, 0, 0)
+                scene.add(sunLight)
+                camera.add(spotLight)
+
+                //sun
+                var radius = 1
+                var width_segs = 64
+                var height_segs = 64
+
+                sun_geometry = new THREE.SphereGeometry(radius, width_segs, height_segs)
+                sun_ref_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let sun_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                num_vert = sun_geometry.vertices.length
+                sun = new THREE.Mesh(sun_geometry, sun_material)
+                scene.add(sun)
+
+                //planet1
+                let planet1_pivot_radius = 3
+                planet1_rot_speed = 0.007
+                radius = 0.1
+                width_segs = 16
+                height_segs = 16
+
+                let planet1_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let planet1_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let planet1 = new THREE.Mesh(planet1_geometry, planet1_material)
+                planet1.translateZ(planet1_pivot_radius)
+
+                planet1_pivot = new THREE.Object3D()
+                scene.add(planet1_pivot)
+                planet1_pivot.add(planet1)
+
+                //moon1
+                let moon1_pivot_radius = 0.4
+                moon1_rot_speed = 0.06
+                radius = 0.02
+                width_segs = 8
+                height_segs = 8
+
+                let moon1_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon1_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon1 = new THREE.Mesh(moon1_geometry, moon1_material)
+                moon1.translateZ(moon1_pivot_radius)
+
+                moon1_pivot = new THREE.Object3D()
+                planet1.add(moon1_pivot)
+                moon1_pivot.add(moon1)
+
+                //planet2
+                let planet2_pivot_radius = 5
+                planet2_rot_speed = 0.005
+                radius = 0.2
+                width_segs = 16
+                height_segs = 16
+
+                let planet2_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let planet2_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let planet2 = new THREE.Mesh(planet2_geometry, planet2_material)
+                planet2.translateZ(planet2_pivot_radius)
+
+                planet2_pivot = new THREE.Object3D()
+                scene.add(planet2_pivot)
+                planet2_pivot.add(planet2)
+
+                //moon2
+                let moon2_pivot_radius = 0.6
+                moon2_rot_speed = 0.04
+                radius = 0.05
+                width_segs = 8
+                height_segs = 8
+
+                let moon2_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon2_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon2 = new THREE.Mesh(moon2_geometry, moon2_material)
+                moon2.translateZ(moon2_pivot_radius)
+
+                moon2_pivot = new THREE.Object3D()
+                planet2.add(moon2_pivot)
+                moon2_pivot.add(moon2)
+
+                //moon3
+                let moon3_pivot_radius = 0.8
+                moon3_rot_speed = 0.02
+                radius = 0.03
+                width_segs = 8
+                height_segs = 8
+
+                let moon3_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon3_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon3 = new THREE.Mesh(moon3_geometry, moon3_material)
+                moon3.translateZ(moon3_pivot_radius)
+
+                moon3_pivot = new THREE.Object3D()
+                planet2.add(moon3_pivot)
+                moon3_pivot.add(moon3)
+
+                //planet3
+                let planet3_pivot_radius = 8
+                planet3_rot_speed = 0.002
+                radius = 0.35
+                width_segs = 16
+                height_segs = 16
+
+                let planet3_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let planet3_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let planet3 = new THREE.Mesh(planet3_geometry, planet3_material)
+                planet3.translateZ(planet3_pivot_radius)
+
+                planet3_pivot = new THREE.Object3D()
+                scene.add(planet3_pivot)
+                planet3_pivot.add(planet3)
+
+                //moon4
+                let moon4_pivot_radius = 0.4
+                moon4_rot_speed = 0.02
+                radius = 0.01
+                width_segs = 8
+                height_segs = 8
+
+                let moon4_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon4_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon4 = new THREE.Mesh(moon4_geometry, moon4_material)
+                moon4.translateZ(moon4_pivot_radius)
+
+                moon4_pivot = new THREE.Object3D()
+                planet3.add(moon4_pivot)
+                moon4_pivot.add(moon4)
+
+                //moon5
+                let moon5_pivot_radius = 0.8
+                moon5_rot_speed = 0.02
+                radius = 0.03
+                width_segs = 8
+                height_segs = 8
+
+                let moon5_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon5_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon5 = new THREE.Mesh(moon5_geometry, moon5_material)
+                moon5.translateZ(moon5_pivot_radius)
+
+                moon5_pivot = new THREE.Object3D()
+                planet3.add(moon5_pivot)
+                moon5_pivot.add(moon5)
+
+                //moon6
+                let moon6_pivot_radius = 1.2
+                moon6_rot_speed = 0.008
+                radius = 0.02
+                width_segs = 8
+                height_segs = 8
+
+                let moon6_geometry = new THREE.SphereGeometry(
+                    radius,
+                    width_segs,
+                    height_segs
+                )
+                let moon6_material = new THREE.MeshLambertMaterial({color: 0xffffff})
+                let moon6 = new THREE.Mesh(moon6_geometry, moon6_material)
+                moon6.translateZ(moon6_pivot_radius)
+
+                moon6_pivot = new THREE.Object3D()
+                planet3.add(moon6_pivot)
+                moon6_pivot.add(moon6)
+
+                //sky sphere
+                let background_geometry = new THREE.SphereGeometry(15, 10, 10)
+                let texture = new THREE.TextureLoader().load('textures/space.png')
+                texture.wrapS = THREE.RepeatWrapping
+                texture.wrapT = THREE.RepeatWrapping
+                texture.repeat.set(10, 10)
+                let background_material = new THREE.MeshBasicMaterial({
+                    side: THREE.BackSide,
+                    map: texture,
+                })
+                let background = new THREE.Mesh(background_geometry, background_material)
+                scene.add(background)
+
+                window.addEventListener('resize', onResize, false)
+                onResize()
+            }
+
+            function initEffects() {
+                //post-processing
+                renderPass = new THREE.RenderPass(scene, camera)
+                badTVPass = new THREE.ShaderPass(THREE.BadTVShader)
+                rgbPass = new THREE.ShaderPass(THREE.RGBShiftShader)
+                filmPass = new THREE.ShaderPass(THREE.FilmShader)
+                staticPass = new THREE.ShaderPass(THREE.StaticShader)
+                copyPass = new THREE.ShaderPass(THREE.CopyShader)
+
+                //set shader uniforms
+                filmPass.uniforms.grayscale.value = 0
+
+                //Init DAT GUI control panel
+                badTVParams = {
+                    mute: true,
+                    show: true,
+                    distortion: 1.3,
+                    distortion2: 1.5,
+                    speed: 0.07,
+                    rollSpeed: 0.0,
+                }
+
+                staticParams = {
+                    show: true,
+                    amount: 0.07,
+                    size: 3,
+                }
+
+                rgbParams = {
+                    show: true,
+                    amount: 0.005,
+                    angle: 2,
+                }
+
+                filmParams = {
+                    show: true,
+                    count: 900,
+                    sIntensity: 0.3,
+                    nIntensity: 0.4,
+                }
+
+                onToggleShaders()
+                onParamsChange()
+            }
+
+            function onParamsChange() {
+                //copy gui params into shader uniforms
+                badTVPass.uniforms['distortion'].value = badTVParams.distortion
+                badTVPass.uniforms['distortion2'].value = badTVParams.distortion2
+                badTVPass.uniforms['speed'].value = badTVParams.speed
+                badTVPass.uniforms['rollSpeed'].value = badTVParams.rollSpeed
+
+                staticPass.uniforms['amount'].value = staticParams.amount
+                staticPass.uniforms['size'].value = staticParams.size
+
+                rgbPass.uniforms['angle'].value = rgbParams.angle * Math.PI
+                rgbPass.uniforms['amount'].value = rgbParams.amount
+
+                filmPass.uniforms['sCount'].value = filmParams.count
+                filmPass.uniforms['sIntensity'].value = filmParams.sIntensity
+                filmPass.uniforms['nIntensity'].value = filmParams.nIntensity
+            }
+
+            function onToggleShaders() {
+                //Add Shader Passes to Composer
+                //order is important
+                composer = new THREE.EffectComposer(renderer)
+                composer.addPass(renderPass)
+
+                if (filmParams.show) {
+                    composer.addPass(filmPass)
+                }
+
+                if (badTVParams.show) {
+                    composer.addPass(badTVPass)
+                }
+
+                if (rgbParams.show) {
+                    composer.addPass(rgbPass)
+                }
+
+                if (staticParams.show) {
+                    composer.addPass(staticPass)
+                }
+
+                composer.addPass(copyPass)
+                copyPass.renderToScreen = true
+            }
+
+            function updateEffects() {
+                if (volume < peak_vol - 20) {
+                    badTVParams = {
+                        mute: true,
+                        show: true,
+                        distortion: map(volume, 0, 100, 0.5, 2),
+                        distortion2: map(volume, 0, 100, 0, 1),
+                        speed: map(volume, 0, 100, 0, 0.2),
+                        rollSpeed: 0.0,
+                    }
+
+                    staticParams = {
+                        show: true,
+                        amount: 0.07,
+                        size: 3,
+                    }
+
+                    rgbParams = {
+                        show: true,
+                        amount: map(volume, 0, 100, 0, 0.002),
+                        angle: -2,
+                    }
+
+                    filmParams = {
+                        show: true,
+                        count: 900,
+                        sIntensity: 0.3,
+                        nIntensity: 0.4,
+                    }
+                } else {
+                    badTVParams = {
+                        mute: true,
+                        show: true,
+                        distortion: map(volume, 0, 100, 3, 7),
+                        distortion2: map(volume, 0, 100, 1, 50),
+                        speed: map(volume, 0, 100, 0.2, 0.8),
+                        rollSpeed: 1,
+                    }
+
+                    staticParams = {
+                        show: true,
+                        amount: 0.1,
+                        size: 3,
+                    }
+
+                    rgbParams = {
+                        show: true,
+                        amount: map(volume, 0, 100, 0.002, 0.004),
+                        angle: -2,
+                    }
+
+                    filmParams = {
+                        show: true,
+                        count: 900,
+                        sIntensity: 0.3,
+                        nIntensity: 0.4,
+                    }
+                }
+                onParamsChange()
+            }
+
+            function updateCamera() {
+                if (volume >= peak_vol - 20) {
+                    camera.fov = map(volume, 0, 100, 60, 40)
+                    camera.updateProjectionMatrix()
+                } else {
+                    camera.fov = map(volume, 0, 100, 60, 50)
+                    camera.updateProjectionMatrix()
+                }
+                camera_pivot.rotation.y -= map(volume, 0, 100, 0, 0.03)
+            }
+
+            function orbit() {
+                sun.rotation.y -= map(volume, 0, 100, 0.01, 0.05)
+                planet1_pivot.rotation.y += planet1_rot_speed
+                moon1_pivot.rotation.y += moon1_rot_speed
+                planet2_pivot.rotation.y += planet2_rot_speed
+                moon2_pivot.rotation.y += moon2_rot_speed
+                moon3_pivot.rotation.y += moon3_rot_speed
+                planet3_pivot.rotation.y += planet3_rot_speed
+                moon4_pivot.rotation.y += moon4_rot_speed
+                moon5_pivot.rotation.y += moon5_rot_speed
+                moon6_pivot.rotation.y += moon6_rot_speed
+            }
+
+            function waveformify() {
+                //compute waveform at this instant and apply to current_index line (at the front)
+                for (i = 0; i < num_vert; i++) {
+                    waveform = mic.mapWaveform(i, num_vert, 0, waveform_intensity)
+                    //waveform_array[i] = waveform;
+
+                    rand = random(0, 1)
+
+                    sun_geometry.vertices[i].set(
+                        sun_ref_geometry.vertices[i].x + waveform * rand,
+                        sun_ref_geometry.vertices[i].y + waveform * rand,
+                        sun_ref_geometry.vertices[i].z + waveform * rand
+                    )
+                }
+                sun_geometry.verticesNeedUpdate = true
+            }
+
+            function updateLights() {
+                angle = map(volume, 0, 100, Math.PI / 24, Math.PI / 12)
+                prenumbra = map(volume, 0, 100, 0, 1)
+                spotLight.penumbra = prenumbra
+                spotLight.angle = angle
+            }
+
+            function animate() {
+                volume = mic.volume
+                peak_vol = mic.peak_volume
+
+                waveformify()
+                updateLights()
+                updateEffects()
+                updateCamera()
+                orbit()
+
+                shaderTime += 0.1
+                badTVPass.uniforms['time'].value = shaderTime
+                filmPass.uniforms['time'].value = shaderTime
+                staticPass.uniforms['time'].value = shaderTime
+
+                requestAnimationFrame(animate)
+                //for effects: composer.render( scene, camera )
+                //plain: renderer.render( scene, camera );
+                composer.render(scene, camera)
+            }
+
+            function onResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                camera.aspect = window.innerWidth / window.innerHeight
+                camera.updateProjectionMatrix()
+            }
+        </script>
+    </body>
+</html>

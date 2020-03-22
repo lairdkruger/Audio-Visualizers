@@ -1,0 +1,206 @@
+<html>
+    <head>
+        <title>lines</title>
+    </head>
+    <body>
+        <section id="title-section">
+            <h1 class="title">lines visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+
+        <script src="src/three.min.js"></script>
+        <script src="src/mic2.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/js/controls/OrbitControls.js"></script>
+
+        <script src="src/js/THREEx.FullScreen.js"></script>
+
+        <script>
+            //enable fullscreen
+            THREEx.FullScreen.bindKey({
+                dblclick: true,
+            })
+
+            document.addEventListener(
+                'dbclick',
+                function(e) {
+                    THREEx.FullScreen.request()
+                    init()
+                },
+                false
+            )
+
+            //variables
+            let camera, scene, renderer
+
+            //geometries
+            var line, point, geometry, material
+            var length, num_points, num_lines
+            var line_width, max_dist, velocity
+            var points = []
+            var lines = []
+            var current_index = 0
+
+            //colors
+            var color, hue, lightness
+
+            //mic
+            var mic = new Microphone(512)
+            var volume
+            var waveform_intensity = window.innerHeight / 3
+
+            init()
+            animate()
+
+            function init() {
+                //scene / camera and orbit controls
+                scene = new THREE.Scene()
+                camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.05,
+                    100
+                )
+                camera.position.x = -7.7
+                camera.position.y = 3
+                camera.position.z = 4.3
+                camera.lookAt(new THREE.Vector3(0, 0, 0))
+                var controls = new THREE.OrbitControls(camera)
+                controls.update()
+
+                //renderer
+                renderer = new THREE.WebGLRenderer({antialias: true})
+                renderer.setPixelRatio(window.devicePixelRatio)
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                document.body.appendChild(renderer.domElement)
+
+                renderer.domElement.id = 'three-canvas'
+
+                //colors
+                scene.background = new THREE.Color(0xffffff)
+                color = new THREE.Color()
+                hue = random(0, 1)
+                lightness = 1
+                color.setHSL(hue, 70, lightness)
+
+                //line
+                length = 4.8
+                num_points = 128
+
+                //num_lines, max_dist and velocity
+                //(49, 4.8, 0.1), (241, 4.8, 0.02),
+
+                num_lines = 241
+                max_dist = 4.8
+                velocity = 0.02
+
+                //fill lines array with line geometry and add lines to group
+                group = new THREE.Group()
+
+                for (j = 0; j < num_lines; j++) {
+                    material = new THREE.LineBasicMaterial({color: color})
+                    geometry = new THREE.Geometry()
+
+                    //fill points array with evenly distributed vectors
+                    for (i = 0; i < num_points; i++) {
+                        x = (length / (num_points - 1)) * i
+                        y = 0
+                        z =
+                            Math.round(
+                                ((max_dist / num_lines) * j - max_dist / 2) * 10000
+                            ) / 10000
+
+                        point = new THREE.Vector3(x, y, 0)
+                        points[i] = point
+                        geometry.vertices[i] = points[i]
+                    }
+
+                    //create line and add it to lines array
+                    line = new THREE.Line(geometry, material)
+                    z = map(j, 0, num_lines, -max_dist / 2, max_dist / 2, true)
+                    line.position.set(0, 0, z)
+                    lines[j] = line
+
+                    //add line to scene
+                    lines[j].translateX(-length / 2)
+                    scene.add(lines[j])
+                }
+
+                window.addEventListener('resize', onResize, false)
+                onResize()
+            }
+
+            function travel() {
+                for (k = 0; k < num_lines; k++) {
+                    if (lines[k].position.z <= -max_dist / 2) {
+                        current_index = k
+                        waveformify(current_index)
+                        colorfy(current_index)
+                        for (i = 0; i < num_points; i++) {
+                            lines[k].position.z = max_dist / 2
+                        }
+                    } else {
+                        lines[k].position.z -= velocity
+                    }
+                }
+            }
+
+            function waveformify(current_index) {
+                //compute waveform at this instant and apply to current_index line (at the front)
+                for (i = 0; i < num_points; i++) {
+                    waveform = mic.mapWaveform(i, num_points, 0, waveform_intensity)
+                    lines[current_index].geometry.vertices[i].y = waveform
+                }
+                lines[current_index].geometry.verticesNeedUpdate = true
+            }
+
+            function colorfy(current_index) {
+                volume = mic.volume
+                peak_vol = mic.peak_volume
+                lightness = map(volume, 0, 100, 0.5, 0.7, true)
+                add = map(volume, 0, 100, 0, 0.1, true) ** 3
+                flash = map(volume, 0, 100, 0, 0.15, true)
+                var color = new THREE.Color()
+
+                if (hue >= 1.0) {
+                    hue = 0.0
+                } else {
+                    hue += add
+                }
+
+                if (volume < peak_vol - 20) {
+                    color.setHSL(hue, 0.7, lightness)
+                } else {
+                    color.setHSL(hue, 0.7 + flash, lightness + flash)
+                }
+
+                lines[current_index].material.color.set(color)
+            }
+
+            function animate() {
+                travel()
+
+                requestAnimationFrame(animate)
+                renderer.render(scene, camera)
+            }
+
+            function onResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                camera.aspect = window.innerWidth / window.innerHeight
+                camera.updateProjectionMatrix()
+            }
+        </script>
+    </body>
+</html>
