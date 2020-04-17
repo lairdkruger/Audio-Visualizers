@@ -51,6 +51,9 @@ function Microphone(_fft, smoothing) {
                 // get peak
                 if (self.vol > self.peak_volume) self.peak_volume = self.vol
                 self.volume = self.vol
+
+                // constantly and slowly decrease peak volume in case of extra loud noises
+                self.peak_volume -= 0.015
             }
 
             var input = context.createMediaStreamSource(stream)

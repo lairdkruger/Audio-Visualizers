@@ -1,1 +1,1 @@
-$("#canvas1").hide();
+$('#canvas1').hide()

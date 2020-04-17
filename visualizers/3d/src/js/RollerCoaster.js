@@ -2,543 +2,511 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-function RollerCoasterGeometry( curve, divisions ) {
+function RollerCoasterGeometry(curve, divisions) {
+    THREE.BufferGeometry.call(this)
+
+    var vertices = []
+    var normals = []
+    var colors = []
+
+    var color1 = [1, 1, 1]
+    var color2 = [1, 1, 0]
+
+    var up = new THREE.Vector3(0, 1, 0)
+    var forward = new THREE.Vector3()
+    var right = new THREE.Vector3()
+
+    var quaternion = new THREE.Quaternion()
+    var prevQuaternion = new THREE.Quaternion()
+    prevQuaternion.setFromAxisAngle(up, Math.PI / 2)
+
+    var point = new THREE.Vector3()
+    var prevPoint = new THREE.Vector3()
+    prevPoint.copy(curve.getPointAt(0))
+
+    // shapes
 
-	THREE.BufferGeometry.call( this );
+    var step = [
+        new THREE.Vector3(-0.225, 0, 0),
+        new THREE.Vector3(0, -0.05, 0),
+        new THREE.Vector3(0, -0.175, 0),
 
-	var vertices = [];
-	var normals = [];
-	var colors = [];
+        new THREE.Vector3(0, -0.05, 0),
+        new THREE.Vector3(0.225, 0, 0),
+        new THREE.Vector3(0, -0.175, 0),
+    ]
+
+    var PI2 = Math.PI * 2
 
-	var color1 = [ 1, 1, 1 ];
-	var color2 = [ 1, 1, 0 ];
+    var sides = 5
+    var tube1 = []
 
-	var up = new THREE.Vector3( 0, 1, 0 );
-	var forward = new THREE.Vector3();
-	var right = new THREE.Vector3();
+    for (var i = 0; i < sides; i++) {
+        var angle = (i / sides) * PI2
+        tube1.push(new THREE.Vector3(Math.sin(angle) * 0.06, Math.cos(angle) * 0.06, 0))
+    }
 
-	var quaternion = new THREE.Quaternion();
-	var prevQuaternion = new THREE.Quaternion();
-	prevQuaternion.setFromAxisAngle( up , Math.PI / 2 );
+    var sides = 6
+    var tube2 = []
 
-	var point = new THREE.Vector3();
-	var prevPoint = new THREE.Vector3();
-	prevPoint.copy( curve.getPointAt( 0 ) );
+    for (var i = 0; i < sides; i++) {
+        var angle = (i / sides) * PI2
+        tube2.push(new THREE.Vector3(Math.sin(angle) * 0.025, Math.cos(angle) * 0.025, 0))
+    }
 
-	// shapes
+    var vector = new THREE.Vector3()
+    var normal = new THREE.Vector3()
+
+    function drawShape(shape, color) {
+        normal.set(0, 0, -1).applyQuaternion(quaternion)
+
+        for (var j = 0; j < shape.length; j++) {
+            vector.copy(shape[j])
+            vector.applyQuaternion(quaternion)
+            vector.add(point)
 
-	var step = [
-		new THREE.Vector3( -0.225,  0, 0 ),
-		new THREE.Vector3(  0, -0.050, 0 ),
-		new THREE.Vector3(  0, -0.175, 0 ),
+            vertices.push(vector.x, vector.y, vector.z)
+            normals.push(normal.x, normal.y, normal.z)
+            colors.push(color[0], color[1], color[2])
+        }
 
-		new THREE.Vector3(  0, -0.050, 0 ),
-		new THREE.Vector3(  0.225,  0, 0 ),
-		new THREE.Vector3(  0, -0.175, 0 )
-	];
+        normal.set(0, 0, 1).applyQuaternion(quaternion)
 
-	var PI2 = Math.PI * 2;
+        for (var j = shape.length - 1; j >= 0; j--) {
+            vector.copy(shape[j])
+            vector.applyQuaternion(quaternion)
+            vector.add(point)
 
-	var sides = 5;
-	var tube1 = [];
+            vertices.push(vector.x, vector.y, vector.z)
+            normals.push(normal.x, normal.y, normal.z)
+            colors.push(color[0], color[1], color[2])
+        }
+    }
 
-	for ( var i = 0; i < sides; i ++ ) {
+    var vector1 = new THREE.Vector3()
+    var vector2 = new THREE.Vector3()
+    var vector3 = new THREE.Vector3()
+    var vector4 = new THREE.Vector3()
 
-		var angle = ( i / sides ) * PI2;
-		tube1.push( new THREE.Vector3( Math.sin( angle ) * 0.06, Math.cos( angle ) * 0.06, 0 ) );
+    var normal1 = new THREE.Vector3()
+    var normal2 = new THREE.Vector3()
+    var normal3 = new THREE.Vector3()
+    var normal4 = new THREE.Vector3()
 
-	}
+    function extrudeShape(shape, offset, color) {
+        for (var j = 0, jl = shape.length; j < jl; j++) {
+            var point1 = shape[j]
+            var point2 = shape[(j + 1) % jl]
 
-	var sides = 6;
-	var tube2 = [];
+            vector1.copy(point1).add(offset)
+            vector1.applyQuaternion(quaternion)
+            vector1.add(point)
 
-	for ( var i = 0; i < sides; i ++ ) {
+            vector2.copy(point2).add(offset)
+            vector2.applyQuaternion(quaternion)
+            vector2.add(point)
 
-		var angle = ( i / sides ) * PI2;
-		tube2.push( new THREE.Vector3( Math.sin( angle ) * 0.025, Math.cos( angle ) * 0.025, 0 ) );
+            vector3.copy(point2).add(offset)
+            vector3.applyQuaternion(prevQuaternion)
+            vector3.add(prevPoint)
 
-	}
+            vector4.copy(point1).add(offset)
+            vector4.applyQuaternion(prevQuaternion)
+            vector4.add(prevPoint)
 
-	var vector = new THREE.Vector3();
-	var normal = new THREE.Vector3();
+            vertices.push(vector1.x, vector1.y, vector1.z)
+            vertices.push(vector2.x, vector2.y, vector2.z)
+            vertices.push(vector4.x, vector4.y, vector4.z)
 
-	function drawShape( shape, color ) {
+            vertices.push(vector2.x, vector2.y, vector2.z)
+            vertices.push(vector3.x, vector3.y, vector3.z)
+            vertices.push(vector4.x, vector4.y, vector4.z)
 
-		normal.set( 0, 0, -1 ).applyQuaternion( quaternion );
+            //
 
-		for ( var j = 0; j < shape.length; j ++ ) {
+            normal1.copy(point1)
+            normal1.applyQuaternion(quaternion)
+            normal1.normalize()
 
-			vector.copy( shape[ j ] );
-			vector.applyQuaternion( quaternion );
-			vector.add( point );
+            normal2.copy(point2)
+            normal2.applyQuaternion(quaternion)
+            normal2.normalize()
 
-			vertices.push( vector.x, vector.y, vector.z );
-			normals.push( normal.x, normal.y, normal.z );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
+            normal3.copy(point2)
+            normal3.applyQuaternion(prevQuaternion)
+            normal3.normalize()
 
-		}
+            normal4.copy(point1)
+            normal4.applyQuaternion(prevQuaternion)
+            normal4.normalize()
 
-		normal.set( 0, 0, 1 ).applyQuaternion( quaternion );
+            normals.push(normal1.x, normal1.y, normal1.z)
+            normals.push(normal2.x, normal2.y, normal2.z)
+            normals.push(normal4.x, normal4.y, normal4.z)
 
-		for ( var j = shape.length - 1; j >= 0; j -- ) {
+            normals.push(normal2.x, normal2.y, normal2.z)
+            normals.push(normal3.x, normal3.y, normal3.z)
+            normals.push(normal4.x, normal4.y, normal4.z)
 
-			vector.copy( shape[ j ] );
-			vector.applyQuaternion( quaternion );
-			vector.add( point );
+            colors.push(color[0], color[1], color[2])
+            colors.push(color[0], color[1], color[2])
+            colors.push(color[0], color[1], color[2])
 
-			vertices.push( vector.x, vector.y, vector.z );
-			normals.push( normal.x, normal.y, normal.z );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
+            colors.push(color[0], color[1], color[2])
+            colors.push(color[0], color[1], color[2])
+            colors.push(color[0], color[1], color[2])
+        }
+    }
 
-		}
+    var offset = new THREE.Vector3()
 
-	};
+    for (var i = 1; i <= divisions; i++) {
+        point.copy(curve.getPointAt(i / divisions))
 
-	var vector1 = new THREE.Vector3();
-	var vector2 = new THREE.Vector3();
-	var vector3 = new THREE.Vector3();
-	var vector4 = new THREE.Vector3();
+        up.set(0, 1, 0)
 
-	var normal1 = new THREE.Vector3();
-	var normal2 = new THREE.Vector3();
-	var normal3 = new THREE.Vector3();
-	var normal4 = new THREE.Vector3();
+        forward.subVectors(point, prevPoint).normalize()
+        right.crossVectors(up, forward).normalize()
+        up.crossVectors(forward, right)
 
-	function extrudeShape( shape, offset, color ) {
+        var angle = Math.atan2(forward.x, forward.z)
 
-		for ( var j = 0, jl = shape.length; j < jl; j ++ ) {
+        quaternion.setFromAxisAngle(up, angle)
 
-			var point1 = shape[ j ];
-			var point2 = shape[ ( j + 1 ) % jl ];
+        if (i % 2 === 0) {
+            drawShape(step, color2)
+        }
 
-			vector1.copy( point1 ).add( offset );
-			vector1.applyQuaternion( quaternion );
-			vector1.add( point );
+        extrudeShape(tube1, offset.set(0, -0.125, 0), color2)
+        extrudeShape(tube2, offset.set(0.2, 0, 0), color1)
+        extrudeShape(tube2, offset.set(-0.2, 0, 0), color1)
 
-			vector2.copy( point2 ).add( offset );
-			vector2.applyQuaternion( quaternion );
-			vector2.add( point );
+        prevPoint.copy(point)
+        prevQuaternion.copy(quaternion)
+    }
 
-			vector3.copy( point2 ).add( offset );
-			vector3.applyQuaternion( prevQuaternion );
-			vector3.add( prevPoint );
+    // console.log( vertices.length );
 
-			vector4.copy( point1 ).add( offset );
-			vector4.applyQuaternion( prevQuaternion );
-			vector4.add( prevPoint );
+    this.addAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(vertices), 3)
+    )
+    this.addAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3))
+    this.addAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3))
+}
 
-			vertices.push( vector1.x, vector1.y, vector1.z );
-			vertices.push( vector2.x, vector2.y, vector2.z );
-			vertices.push( vector4.x, vector4.y, vector4.z );
+RollerCoasterGeometry.prototype = Object.create(THREE.BufferGeometry.prototype)
 
-			vertices.push( vector2.x, vector2.y, vector2.z );
-			vertices.push( vector3.x, vector3.y, vector3.z );
-			vertices.push( vector4.x, vector4.y, vector4.z );
+function RollerCoasterLiftersGeometry(curve, divisions) {
+    THREE.BufferGeometry.call(this)
 
-			//
+    var vertices = []
+    var normals = []
 
-			normal1.copy( point1 );
-			normal1.applyQuaternion( quaternion );
-			normal1.normalize();
+    var quaternion = new THREE.Quaternion()
 
-			normal2.copy( point2 );
-			normal2.applyQuaternion( quaternion );
-			normal2.normalize();
+    var up = new THREE.Vector3(0, 1, 0)
 
-			normal3.copy( point2 );
-			normal3.applyQuaternion( prevQuaternion );
-			normal3.normalize();
+    var point = new THREE.Vector3()
+    var tangent = new THREE.Vector3()
 
-			normal4.copy( point1 );
-			normal4.applyQuaternion( prevQuaternion );
-			normal4.normalize();
+    // shapes
 
-			normals.push( normal1.x, normal1.y, normal1.z );
-			normals.push( normal2.x, normal2.y, normal2.z );
-			normals.push( normal4.x, normal4.y, normal4.z );
+    var tube1 = [
+        new THREE.Vector3(0, 0.05, -0.05),
+        new THREE.Vector3(0, 0.05, 0.05),
+        new THREE.Vector3(0, -0.05, 0),
+    ]
 
-			normals.push( normal2.x, normal2.y, normal2.z );
-			normals.push( normal3.x, normal3.y, normal3.z );
-			normals.push( normal4.x, normal4.y, normal4.z );
+    var tube2 = [
+        new THREE.Vector3(-0.05, 0, 0.05),
+        new THREE.Vector3(-0.05, 0, -0.05),
+        new THREE.Vector3(0.05, 0, 0),
+    ]
 
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
+    var tube3 = [
+        new THREE.Vector3(0.05, 0, -0.05),
+        new THREE.Vector3(0.05, 0, 0.05),
+        new THREE.Vector3(-0.05, 0, 0),
+    ]
 
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
-			colors.push( color[ 0 ], color[ 1 ], color[ 2 ] );
+    var vector1 = new THREE.Vector3()
+    var vector2 = new THREE.Vector3()
+    var vector3 = new THREE.Vector3()
+    var vector4 = new THREE.Vector3()
 
-		}
+    var normal1 = new THREE.Vector3()
+    var normal2 = new THREE.Vector3()
+    var normal3 = new THREE.Vector3()
+    var normal4 = new THREE.Vector3()
 
-	};
+    function extrudeShape(shape, fromPoint, toPoint) {
+        for (var j = 0, jl = shape.length; j < jl; j++) {
+            var point1 = shape[j]
+            var point2 = shape[(j + 1) % jl]
 
-	var offset = new THREE.Vector3();
+            vector1.copy(point1)
+            vector1.applyQuaternion(quaternion)
+            vector1.add(fromPoint)
 
-	for ( var i = 1; i <= divisions; i ++ ) {
+            vector2.copy(point2)
+            vector2.applyQuaternion(quaternion)
+            vector2.add(fromPoint)
 
-		point.copy( curve.getPointAt( i / divisions ) );
+            vector3.copy(point2)
+            vector3.applyQuaternion(quaternion)
+            vector3.add(toPoint)
 
-		up.set( 0, 1, 0 );
+            vector4.copy(point1)
+            vector4.applyQuaternion(quaternion)
+            vector4.add(toPoint)
 
-		forward.subVectors( point, prevPoint ).normalize();
-		right.crossVectors( up, forward ).normalize();
-		up.crossVectors( forward, right );
+            vertices.push(vector1.x, vector1.y, vector1.z)
+            vertices.push(vector2.x, vector2.y, vector2.z)
+            vertices.push(vector4.x, vector4.y, vector4.z)
 
-		var angle = Math.atan2( forward.x, forward.z );
+            vertices.push(vector2.x, vector2.y, vector2.z)
+            vertices.push(vector3.x, vector3.y, vector3.z)
+            vertices.push(vector4.x, vector4.y, vector4.z)
 
-		quaternion.setFromAxisAngle( up, angle );
+            //
 
-		if ( i % 2 === 0 ) {
+            normal1.copy(point1)
+            normal1.applyQuaternion(quaternion)
+            normal1.normalize()
 
-			drawShape( step, color2 );
+            normal2.copy(point2)
+            normal2.applyQuaternion(quaternion)
+            normal2.normalize()
 
-		}
+            normal3.copy(point2)
+            normal3.applyQuaternion(quaternion)
+            normal3.normalize()
 
-		extrudeShape( tube1, offset.set(  0,  -0.125, 0 ), color2 );
-		extrudeShape( tube2, offset.set(  0.2, 0,     0 ), color1 );
-		extrudeShape( tube2, offset.set( -0.2, 0,     0 ), color1 );
+            normal4.copy(point1)
+            normal4.applyQuaternion(quaternion)
+            normal4.normalize()
 
-		prevPoint.copy( point );
-		prevQuaternion.copy( quaternion );
+            normals.push(normal1.x, normal1.y, normal1.z)
+            normals.push(normal2.x, normal2.y, normal2.z)
+            normals.push(normal4.x, normal4.y, normal4.z)
 
-	}
+            normals.push(normal2.x, normal2.y, normal2.z)
+            normals.push(normal3.x, normal3.y, normal3.z)
+            normals.push(normal4.x, normal4.y, normal4.z)
+        }
+    }
 
-	// console.log( vertices.length );
+    var fromPoint = new THREE.Vector3()
+    var toPoint = new THREE.Vector3()
 
-	this.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );
-	this.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array( normals ), 3 ) );
-	this.addAttribute( 'color', new THREE.BufferAttribute( new Float32Array( colors ), 3 ) );
+    for (var i = 1; i <= divisions; i++) {
+        point.copy(curve.getPointAt(i / divisions))
+        tangent.copy(curve.getTangentAt(i / divisions))
 
-};
+        var angle = Math.atan2(tangent.x, tangent.z)
 
-RollerCoasterGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
+        quaternion.setFromAxisAngle(up, angle)
 
-function RollerCoasterLiftersGeometry( curve, divisions ) {
+        //
 
-	THREE.BufferGeometry.call( this );
+        if (point.y > 10) {
+            fromPoint.set(-0.75, -0.35, 0)
+            fromPoint.applyQuaternion(quaternion)
+            fromPoint.add(point)
 
-	var vertices = [];
-	var normals = [];
+            toPoint.set(0.75, -0.35, 0)
+            toPoint.applyQuaternion(quaternion)
+            toPoint.add(point)
 
-	var quaternion = new THREE.Quaternion();
+            extrudeShape(tube1, fromPoint, toPoint)
 
-	var up = new THREE.Vector3( 0, 1, 0 );
+            fromPoint.set(-0.7, -0.3, 0)
+            fromPoint.applyQuaternion(quaternion)
+            fromPoint.add(point)
 
-	var point = new THREE.Vector3();
-	var tangent = new THREE.Vector3();
+            toPoint.set(-0.7, -point.y, 0)
+            toPoint.applyQuaternion(quaternion)
+            toPoint.add(point)
 
-	// shapes
+            extrudeShape(tube2, fromPoint, toPoint)
 
-	var tube1 = [
-		new THREE.Vector3(  0,  0.05, -0.05 ),
-		new THREE.Vector3(  0,  0.05,  0.05 ),
-		new THREE.Vector3(  0, -0.05,  0 )
-	];
+            fromPoint.set(0.7, -0.3, 0)
+            fromPoint.applyQuaternion(quaternion)
+            fromPoint.add(point)
 
-	var tube2 = [
-		new THREE.Vector3( -0.05, 0,  0.05 ),
-		new THREE.Vector3( -0.05, 0, -0.05 ),
-		new THREE.Vector3(  0.05, 0,  0 )
-	];
+            toPoint.set(0.7, -point.y, 0)
+            toPoint.applyQuaternion(quaternion)
+            toPoint.add(point)
 
-	var tube3 = [
-		new THREE.Vector3(  0.05, 0, -0.05 ),
-		new THREE.Vector3(  0.05, 0,  0.05 ),
-		new THREE.Vector3( -0.05, 0,  0 )
-	];
+            extrudeShape(tube3, fromPoint, toPoint)
+        } else {
+            fromPoint.set(0, -0.2, 0)
+            fromPoint.applyQuaternion(quaternion)
+            fromPoint.add(point)
 
-	var vector1 = new THREE.Vector3();
-	var vector2 = new THREE.Vector3();
-	var vector3 = new THREE.Vector3();
-	var vector4 = new THREE.Vector3();
+            toPoint.set(0, -point.y, 0)
+            toPoint.applyQuaternion(quaternion)
+            toPoint.add(point)
 
-	var normal1 = new THREE.Vector3();
-	var normal2 = new THREE.Vector3();
-	var normal3 = new THREE.Vector3();
-	var normal4 = new THREE.Vector3();
+            extrudeShape(tube3, fromPoint, toPoint)
+        }
+    }
 
-	function extrudeShape( shape, fromPoint, toPoint ) {
+    this.addAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(vertices), 3)
+    )
+    this.addAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3))
+}
 
-		for ( var j = 0, jl = shape.length; j < jl; j ++ ) {
+RollerCoasterLiftersGeometry.prototype = Object.create(THREE.BufferGeometry.prototype)
 
-			var point1 = shape[ j ];
-			var point2 = shape[ ( j + 1 ) % jl ];
+function RollerCoasterShadowGeometry(curve, divisions) {
+    THREE.BufferGeometry.call(this)
 
-			vector1.copy( point1 );
-			vector1.applyQuaternion( quaternion );
-			vector1.add( fromPoint );
+    var vertices = []
 
-			vector2.copy( point2 );
-			vector2.applyQuaternion( quaternion );
-			vector2.add( fromPoint );
+    var up = new THREE.Vector3(0, 1, 0)
+    var forward = new THREE.Vector3()
 
-			vector3.copy( point2 );
-			vector3.applyQuaternion( quaternion );
-			vector3.add( toPoint );
+    var quaternion = new THREE.Quaternion()
+    var prevQuaternion = new THREE.Quaternion()
+    prevQuaternion.setFromAxisAngle(up, Math.PI / 2)
 
-			vector4.copy( point1 );
-			vector4.applyQuaternion( quaternion );
-			vector4.add( toPoint );
+    var point = new THREE.Vector3()
 
-			vertices.push( vector1.x, vector1.y, vector1.z );
-			vertices.push( vector2.x, vector2.y, vector2.z );
-			vertices.push( vector4.x, vector4.y, vector4.z );
+    var prevPoint = new THREE.Vector3()
+    prevPoint.copy(curve.getPointAt(0))
+    prevPoint.y = 0
 
-			vertices.push( vector2.x, vector2.y, vector2.z );
-			vertices.push( vector3.x, vector3.y, vector3.z );
-			vertices.push( vector4.x, vector4.y, vector4.z );
+    var vector1 = new THREE.Vector3()
+    var vector2 = new THREE.Vector3()
+    var vector3 = new THREE.Vector3()
+    var vector4 = new THREE.Vector3()
 
-			//
+    for (var i = 1; i <= divisions; i++) {
+        point.copy(curve.getPointAt(i / divisions))
+        point.y = 0
 
-			normal1.copy( point1 );
-			normal1.applyQuaternion( quaternion );
-			normal1.normalize();
+        forward.subVectors(point, prevPoint)
 
-			normal2.copy( point2 );
-			normal2.applyQuaternion( quaternion );
-			normal2.normalize();
+        var angle = Math.atan2(forward.x, forward.z)
 
-			normal3.copy( point2 );
-			normal3.applyQuaternion( quaternion );
-			normal3.normalize();
+        quaternion.setFromAxisAngle(up, angle)
 
-			normal4.copy( point1 );
-			normal4.applyQuaternion( quaternion );
-			normal4.normalize();
+        vector1.set(-0.3, 0, 0)
+        vector1.applyQuaternion(quaternion)
+        vector1.add(point)
 
-			normals.push( normal1.x, normal1.y, normal1.z );
-			normals.push( normal2.x, normal2.y, normal2.z );
-			normals.push( normal4.x, normal4.y, normal4.z );
+        vector2.set(0.3, 0, 0)
+        vector2.applyQuaternion(quaternion)
+        vector2.add(point)
 
-			normals.push( normal2.x, normal2.y, normal2.z );
-			normals.push( normal3.x, normal3.y, normal3.z );
-			normals.push( normal4.x, normal4.y, normal4.z );
+        vector3.set(0.3, 0, 0)
+        vector3.applyQuaternion(prevQuaternion)
+        vector3.add(prevPoint)
 
-		}
+        vector4.set(-0.3, 0, 0)
+        vector4.applyQuaternion(prevQuaternion)
+        vector4.add(prevPoint)
 
-	};
+        vertices.push(vector1.x, vector1.y, vector1.z)
+        vertices.push(vector2.x, vector2.y, vector2.z)
+        vertices.push(vector4.x, vector4.y, vector4.z)
 
-	var fromPoint = new THREE.Vector3();
-	var toPoint = new THREE.Vector3();
+        vertices.push(vector2.x, vector2.y, vector2.z)
+        vertices.push(vector3.x, vector3.y, vector3.z)
+        vertices.push(vector4.x, vector4.y, vector4.z)
 
-	for ( var i = 1; i <= divisions; i ++ ) {
+        prevPoint.copy(point)
+        prevQuaternion.copy(quaternion)
+    }
 
-		point.copy( curve.getPointAt( i / divisions ) );
-		tangent.copy( curve.getTangentAt( i / divisions ) );
+    this.addAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(vertices), 3)
+    )
+}
 
-		var angle = Math.atan2( tangent.x, tangent.z );
-
-		quaternion.setFromAxisAngle( up, angle );
-
-		//
-
-		if ( point.y > 10 ) {
-
-			fromPoint.set( -0.75, -0.35, 0 );
-			fromPoint.applyQuaternion( quaternion );
-			fromPoint.add( point );
-
-			toPoint.set( 0.75, -0.35, 0 );
-			toPoint.applyQuaternion( quaternion );
-			toPoint.add( point );
-
-			extrudeShape( tube1, fromPoint, toPoint );
-
-			fromPoint.set( -0.7, -0.3, 0 );
-			fromPoint.applyQuaternion( quaternion );
-			fromPoint.add( point );
-
-			toPoint.set( -0.7, -point.y, 0 );
-			toPoint.applyQuaternion( quaternion );
-			toPoint.add( point );
-
-			extrudeShape( tube2, fromPoint, toPoint );
-
-			fromPoint.set( 0.7, -0.3, 0 );
-			fromPoint.applyQuaternion( quaternion );
-			fromPoint.add( point );
-
-			toPoint.set( 0.7, -point.y, 0 );
-			toPoint.applyQuaternion( quaternion );
-			toPoint.add( point );
-
-			extrudeShape( tube3, fromPoint, toPoint );
-
-		} else {
-
-			fromPoint.set( 0, -0.2, 0 );
-			fromPoint.applyQuaternion( quaternion );
-			fromPoint.add( point );
-
-			toPoint.set( 0, -point.y, 0 );
-			toPoint.applyQuaternion( quaternion );
-			toPoint.add( point );
-
-			extrudeShape( tube3, fromPoint, toPoint );
-
-		}
-
-	}
-
-	this.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );
-	this.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array( normals ), 3 ) );
-
-};
-
-RollerCoasterLiftersGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
-
-function RollerCoasterShadowGeometry( curve, divisions ) {
-
-	THREE.BufferGeometry.call( this );
-
-	var vertices = [];
-
-	var up = new THREE.Vector3( 0, 1, 0 );
-	var forward = new THREE.Vector3();
-
-	var quaternion = new THREE.Quaternion();
-	var prevQuaternion = new THREE.Quaternion();
-	prevQuaternion.setFromAxisAngle( up , Math.PI / 2 );
-
-	var point = new THREE.Vector3();
-
-	var prevPoint = new THREE.Vector3();
-	prevPoint.copy( curve.getPointAt( 0 ) );
-	prevPoint.y = 0;
-
-	var vector1 = new THREE.Vector3();
-	var vector2 = new THREE.Vector3();
-	var vector3 = new THREE.Vector3();
-	var vector4 = new THREE.Vector3();
-
-	for ( var i = 1; i <= divisions; i ++ ) {
-
-		point.copy( curve.getPointAt( i / divisions ) );
-		point.y = 0;
-
-		forward.subVectors( point, prevPoint );
-
-		var angle = Math.atan2( forward.x, forward.z );
-
-		quaternion.setFromAxisAngle( up, angle );
-
-		vector1.set( -0.3, 0, 0 );
-		vector1.applyQuaternion( quaternion );
-		vector1.add( point );
-
-		vector2.set(  0.3, 0, 0 );
-		vector2.applyQuaternion( quaternion );
-		vector2.add( point );
-
-		vector3.set(  0.3, 0, 0 );
-		vector3.applyQuaternion( prevQuaternion );
-		vector3.add( prevPoint );
-
-		vector4.set( -0.3, 0, 0 );
-		vector4.applyQuaternion( prevQuaternion );
-		vector4.add( prevPoint );
-
-		vertices.push( vector1.x, vector1.y, vector1.z );
-		vertices.push( vector2.x, vector2.y, vector2.z );
-		vertices.push( vector4.x, vector4.y, vector4.z );
-
-		vertices.push( vector2.x, vector2.y, vector2.z );
-		vertices.push( vector3.x, vector3.y, vector3.z );
-		vertices.push( vector4.x, vector4.y, vector4.z );
-
-		prevPoint.copy( point );
-		prevQuaternion.copy( quaternion );
-
-	}
-
-	this.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );
-
-};
-
-RollerCoasterShadowGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
+RollerCoasterShadowGeometry.prototype = Object.create(THREE.BufferGeometry.prototype)
 
 function SkyGeometry() {
+    THREE.BufferGeometry.call(this)
 
-	THREE.BufferGeometry.call( this );
+    var vertices = []
 
-	var vertices = [];
+    for (var i = 0; i < 100; i++) {
+        var x = Math.random() * 800 - 400
+        var y = Math.random() * 50 + 50
+        var z = Math.random() * 800 - 400
 
-	for ( var i = 0; i < 100; i ++ ) {
+        var size = Math.random() * 40 + 20
 
-		var x = Math.random() * 800 - 400;
-		var y = Math.random() * 50 + 50;
-		var z = Math.random() * 800 - 400;
+        vertices.push(x - size, y, z - size)
+        vertices.push(x + size, y, z - size)
+        vertices.push(x - size, y, z + size)
 
-		var size = Math.random() * 40 + 20;
+        vertices.push(x + size, y, z - size)
+        vertices.push(x + size, y, z + size)
+        vertices.push(x - size, y, z + size)
+    }
 
-		vertices.push( x - size, y, z - size );
-		vertices.push( x + size, y, z - size );
-		vertices.push( x - size, y, z + size );
+    this.addAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(vertices), 3)
+    )
+}
 
-		vertices.push( x + size, y, z - size );
-		vertices.push( x + size, y, z + size );
-		vertices.push( x - size, y, z + size );
+SkyGeometry.prototype = Object.create(THREE.BufferGeometry.prototype)
 
-	}
+function TreesGeometry(landscape) {
+    THREE.BufferGeometry.call(this)
 
+    var vertices = []
+    var colors = []
 
-	this.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );
+    var raycaster = new THREE.Raycaster()
+    raycaster.ray.direction.set(0, -1, 0)
 
-};
+    for (var i = 0; i < 2000; i++) {
+        var x = Math.random() * 500 - 250
+        var z = Math.random() * 500 - 250
 
-SkyGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
+        raycaster.ray.origin.set(x, 50, z)
 
-function TreesGeometry( landscape ) {
+        var intersections = raycaster.intersectObject(landscape)
 
-	THREE.BufferGeometry.call( this );
+        if (intersections.length === 0) continue
 
-	var vertices = [];
-	var colors = [];
+        var y = intersections[0].point.y
 
-	var raycaster = new THREE.Raycaster();
-	raycaster.ray.direction.set( 0, -1, 0 );
+        var height = Math.random() * 5 + 0.5
 
-	for ( var i = 0; i < 2000; i ++ ) {
+        var angle = Math.random() * Math.PI * 2
 
-		var x = Math.random() * 500 - 250;
-		var z = Math.random() * 500 - 250;
+        vertices.push(x + Math.sin(angle), y, z + Math.cos(angle))
+        vertices.push(x, y + height, z)
+        vertices.push(x + Math.sin(angle + Math.PI), y, z + Math.cos(angle + Math.PI))
 
-		raycaster.ray.origin.set( x, 50, z );
+        angle += Math.PI / 2
 
-		var intersections = raycaster.intersectObject( landscape );
+        vertices.push(x + Math.sin(angle), y, z + Math.cos(angle))
+        vertices.push(x, y + height, z)
+        vertices.push(x + Math.sin(angle + Math.PI), y, z + Math.cos(angle + Math.PI))
 
-		if ( intersections.length === 0 ) continue;
+        var random = Math.random() * 0.1
 
-		var y = intersections[ 0 ].point.y;
+        for (var j = 0; j < 6; j++) {
+            colors.push(0.2 + random, 0.4 + random, 0)
+        }
+    }
 
-		var height = Math.random() * 5 + 0.5;
+    this.addAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(vertices), 3)
+    )
+    this.addAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3))
+}
 
-		var angle = Math.random() * Math.PI * 2;
-
-		vertices.push( x + Math.sin( angle ), y, z + Math.cos( angle ) );
-		vertices.push( x, y + height, z );
-		vertices.push( x + Math.sin( angle + Math.PI ), y, z + Math.cos( angle + Math.PI ) );
-
-		angle += Math.PI / 2;
-
-		vertices.push( x + Math.sin( angle ), y, z + Math.cos( angle ) );
-		vertices.push( x, y + height, z );
-		vertices.push( x + Math.sin( angle + Math.PI ), y, z + Math.cos( angle + Math.PI ) );
-
-		var random = Math.random() * 0.1;
-
-		for ( var j = 0; j < 6; j ++ ) {
-
-			colors.push( 0.2 + random, 0.4 + random, 0 );
-
-		}
-
-	}
-
-	this.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );
-	this.addAttribute( 'color', new THREE.BufferAttribute( new Float32Array( colors ), 3 ) );
-
-};
-
-TreesGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
+TreesGeometry.prototype = Object.create(THREE.BufferGeometry.prototype)
