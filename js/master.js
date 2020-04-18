@@ -1,17 +1,35 @@
+var curtainsLoaded = false
+
+window.addEventListener('load', function() {
+    $('#grid-section').hide()
+
+    $('#begin-btn').click(function() {
+        $('#begin-btn').hide()
+        $('#hide-btn').show()
+
+        $('#info-section').slideToggle()
+        $('#grid-section').slideToggle()
+
+        if (!curtainsLoaded) {
+            setTimeout(function() {
+                var curtainsGridScroller = new CurtainsGridScroller(
+                    scrollShader.uniforms,
+                    scrollShader.vertexShader,
+                    scrollShader.fragmentShader
+                )
+
+                curtainsLoaded = true
+            }, 500)
+        }
+    })
+})
+
 $('#grid-section').hide()
 $('#hide-btn').hide()
 $('#info-section').hide()
 
 $('#title').click(function() {
     window.location.reload()
-})
-
-$('#begin-btn').click(function() {
-    $('#begin-btn').hide()
-    $('#hide-btn').show()
-
-    $('#info-section').slideToggle()
-    $('#grid-section').slideToggle()
 })
 
 $('#hide-btn').click(function() {

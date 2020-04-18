@@ -61,6 +61,8 @@
     </head>
 
     <body>
+        <div id="grid-canvas"></div>
+
         <section id="all">
             <section id="title-section">
                 <h1 id="title" class="title">audio<br />visualizers</h1>
@@ -84,61 +86,34 @@
             </section>
 
             <section id="grid-section">
-                <div class="container">
+                <div class="grid-box">
                     <div class="row">
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="plasma thumbnail"
-                                style="background-image: url(images/plasma.jpg)"
-                            ></div>
+                        <div class="grid-curtain plasma">
+                            <img src="/images/plasma.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="twistline thumbnail"
-                                style="background-image: url(images/twistline.jpg)"
-                            ></div>
+                        <div class="grid-curtain twistline">
+                            <img src="/images/twistline.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="vinyl thumbnail"
-                                style="background-image: url(images/vinyl.jpg)"
-                            ></div>
+                        <div class="grid-curtain vinyl">
+                            <img src="/images/vinyl.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="arachnid thumbnail"
-                                style="background-image: url(images/arachnid.jpg)"
-                            ></div>
+                        <div class="grid-curtain arachnid">
+                            <img src="/images/arachnid.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="lollipop thumbnail"
-                                style="background-image: url(images/lollipop.jpg)"
-                            ></div>
+                        <div class="grid-curtain lollipop">
+                            <img src="/images/lollipop.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="gemot thumbnail"
-                                style="background-image: url(images/gemot.jpg)"
-                            ></div>
+                        <div class="grid-curtain gemot">
+                            <img src="/images/gemot.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="lines thumbnail"
-                                style="background-image: url(images/lines.jpg)"
-                            ></div>
+                        <div class="grid-curtain lines">
+                            <img src="/images/lines.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="storm thumbnail"
-                                style="background-image: url(images/storm.jpg)"
-                            ></div>
+                        <div class="grid-curtain storm">
+                            <img src="/images/storm.jpg" alt="" />
                         </div>
-                        <div class="cell col-sm-12 col-md-6 col-lg-4">
-                            <div
-                                class="signals thumbnail"
-                                style="background-image: url(images/signals.jpg)"
-                            ></div>
+                        <div class="grid-curtain signals">
+                            <img src="/images/signals.jpg" alt="" />
                         </div>
                     </div>
                 </div>
@@ -155,7 +130,10 @@
         <!-- JQuery -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
         <!-- Javascripts -->
-        <!-- <script src="js/microphone.js" charset="utf-8"></script> -->
+        <script src="src/curtains.min.js" charset="utf-8"></script>
+
+        <script src="src/CurtainsGridScroller.js" charset="utf-8"></script>
+        <script src="src/post/scrollShader.js" charset="utf-8"></script>
         <script src="js/master.js" charset="utf-8"></script>
     </body>
 </html>
