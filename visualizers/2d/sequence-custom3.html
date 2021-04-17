@@ -154,7 +154,7 @@
 
                     if (i > num_squares - how_many_squares) {
                         if (peaked_array[i]) {
-                            ctx.lineWidth = map(volume, 0, peak_vol, 4.0, 10.0)
+                            ctx.lineWidth = map(volume, 0, peak_vol, 4.0, 6.0)
                             ctx.strokeStyle = color_array[i]
                             ctx.centreStrokeRectRotated(
                                 sq.x,
@@ -181,7 +181,7 @@
             function colorify() {
                 if (color_mode == 'colours 1') {
                     lightness = map(volume, 0, 100, 40, 60, true)
-                    add = map(volume, 0, 100, 0, 2.5) ** 3
+                    add = map(volume, 0, 100, 0, 2) ** 3
                     flash = map(volume, 0, 100, 0, 30, true)
 
                     if (hue == 360) {
