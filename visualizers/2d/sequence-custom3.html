@@ -1,0 +1,286 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Twistline Visualizer</title>
+
+        <!-- Favicon -->
+        <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+        <!-- Style Sheet -->
+        <link rel="stylesheet" href="css/styles.css" />
+
+        <!-- Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+
+    <body>
+        <section id="title-section">
+            <h1 class="title">sequence custom visualizer</h1>
+            <div id="begin-btn" class="custom-btn">click to begin</div>
+        </section>
+
+        <img
+            id="sequence-logo-white"
+            src="images/Sequence-White.png"
+            style="display: none"
+        />
+        <img
+            id="sequence-logo-black"
+            src="images/Sequence-Black.png"
+            style="display: none"
+        />
+
+        <!-- Visualizer Scripts -->
+        <script src="src/canvas.js"></script>
+        <script src="src/creative_coding.js"></script>
+        <script src="src/microphone.js"></script>
+
+        <script>
+            //create canvas
+            var ctx = createCanvas('canvas1')
+
+            //double click fullscreen event listener
+            //Double Click to go FULLSCREEN
+            function getreqfullscreen() {
+                var root = document.documentElement
+                return (
+                    root.requestFullscreen ||
+                    root.webkitRequestFullscreen ||
+                    root.mozRequestFullScreen ||
+                    root.msRequestFullscreen
+                )
+            }
+
+            canvas.addEventListener('dblclick', function () {
+                //usage: getreqfullscreen().call(targetelement) // open full screen on targetelement
+
+                var globalreqfullscreen = getreqfullscreen() // get supported version of requestFullscreen()
+
+                globalreqfullscreen.call(document.documentElement)
+
+                $('#canvas1').css('cursor', 'none')
+            })
+
+            window.addEventListener('resize', function () {
+                if (ctx != null) {
+                    ctx.canvas.width = window.innerWidth
+                    ctx.canvas.height = window.innerHeight
+                }
+            })
+
+            //key presses
+            document.addEventListener(
+                'keypress',
+                function (e) {
+                    if (e.keyCode == 49) {
+                        color_mode = 'colours 1'
+                    } else if (e.keyCode == 50) {
+                        color_mode = 'white on black'
+                    } else if (e.keyCode == 51) {
+                        color_mode = 'black on white'
+                    }
+                },
+                false
+            )
+
+            //set to 128 for digitised effect, otherwise 512 is smooth
+            var mic = new Microphone(128, 0.1)
+            var volume = 0
+            var peak_vol = 0
+            var peaked = false
+
+            //particles
+            var squares = []
+            var num_squares = 32
+
+            //colours
+            var background_colour = 0
+            var line_colour = rgb(255)
+
+            //color setup
+            var color_mode = 'colours 1'
+
+            var hue = 0
+            var line_color = rgb(255, 255, 255)
+            var color_array = []
+            peaked_array = []
+
+            //color modes: standard, palette, lit, lit II, lit III
+            var mode = 'lit II'
+
+            var logo_white = document.getElementById('sequence-logo-white')
+            var logo_black = document.getElementById('sequence-logo-black')
+            var isWhite = false
+            var image_rotation = 0
+
+            //add a number of particles to particles
+            for (i = 0; i < num_squares; i++) {
+                color_array.push([])
+                peaked_array.push([])
+                addSquare(i)
+            }
+
+            function addSquare(_i) {
+                var square = {
+                    x: w / 2,
+                    y: h / 2,
+                    size: map(i, num_squares, 0, w / 4, w),
+                    rotation: 0,
+                }
+                squares.push(square)
+            }
+
+            function drawSquares() {
+                var rotation_speed = volume ** 2 / 100
+                var how_many_squares = Math.floor(
+                    map(volume, 0, peak_vol, 1, num_squares)
+                )
+                for (i = 0; i < num_squares; i++) {
+                    sq = squares[i]
+                    sq.x = w / 2
+                    sq.y = h / 2
+
+                    waveform = mic.mapWaveform(i, how_many_squares, 0, h * 200)
+
+                    var size = map(i, num_squares, 0, w / 4, w)
+
+                    sq.rotation += (i * rotation_speed) / 1000
+
+                    if (i > num_squares - how_many_squares) {
+                        if (peaked_array[i]) {
+                            ctx.lineWidth = map(volume, 0, peak_vol, 4.0, 10.0)
+                            ctx.strokeStyle = color_array[i]
+                            ctx.centreStrokeRectRotated(
+                                sq.x,
+                                sq.y,
+                                size,
+                                size,
+                                sq.rotation
+                            )
+                        } else {
+                            ctx.lineWidth = 3.0
+                            ctx.strokeStyle = color_array[i]
+                            ctx.centreStrokeRectRotated(
+                                sq.x,
+                                sq.y,
+                                size,
+                                size,
+                                sq.rotation
+                            )
+                        }
+                    }
+                }
+            }
+
+            function colorify() {
+                if (color_mode == 'colours 1') {
+                    lightness = map(volume, 0, 100, 40, 60, true)
+                    add = map(volume, 0, 100, 0, 2.5) ** 3
+                    flash = map(volume, 0, 100, 0, 30, true)
+
+                    if (hue == 360) {
+                        hue = 0
+                    } else {
+                        hue += add
+                    }
+
+                    if (!peaked) {
+                        color_array[num_squares] = hsl(hue, 80 + lightness / 8, lightness)
+                        peaked_array[0] = false
+                    } else {
+                        color_array[num_squares] = hsl(hue, 80 + flash, lightness + flash)
+                        peaked_array[0] = true
+                    }
+
+                    for (k = 0; k < num_squares; k++) {
+                        color_array[k] = color_array[k + 1]
+                    }
+
+                    for (k = num_squares; k > 0; k--) {
+                        peaked_array[k] = peaked_array[k - 1]
+                    }
+                } else if (color_mode == 'white on black') {
+                    lightness = map(volume, 0, 100, 0, 100, true)
+                    add = map(volume, 0, 100, 0, 2.5) ** 3
+                    flash = map(volume, 0, 100, 0, 30, true)
+
+                    if (hue == 360) {
+                        hue = 0
+                    } else {
+                        hue += add
+                    }
+
+                    if (!peaked) {
+                        color_array[num_squares] = hsl(hue, 0, lightness)
+                        peaked_array[0] = false
+                    } else {
+                        color_array[num_squares] = hsl(hue, 0, lightness + flash)
+                        peaked_array[0] = true
+                    }
+
+                    for (k = 0; k < num_squares; k++) {
+                        color_array[k] = color_array[k + 1]
+                    }
+
+                    for (k = num_squares; k > 0; k--) {
+                        peaked_array[k] = peaked_array[k - 1]
+                    }
+                }
+            }
+
+            function drawLogo() {
+                var wrh = logo_black.width / logo_black.height
+                if (peaked) {
+                    var newWidth = map(volume, 0, peak_vol, w / 3, w / 1.5)
+                } else {
+                    var newWidth = map(volume, 0, peak_vol, w / 10, w / 6)
+                }
+                var newHeight = newWidth / wrh
+                if (newHeight > h) {
+                    if (peaked) {
+                        newHeight = map(volume, 0, peak_vol, w / 3, w / 1.5)
+                    } else {
+                        newHeight = map(volume, 0, peak_vol, w / 8, w / 4)
+                    }
+                    newWidth = newHeight * wrh
+                }
+                var xOffset = newWidth < w ? (w - newWidth) / 2 : 0
+                var yOffset = newHeight < h ? (h - newHeight) / 2 : 0
+
+                if (isWhite) {
+                    ctx.drawImage(logo_black, xOffset, yOffset, newWidth, newHeight)
+                } else {
+                    ctx.drawImage(logo_white, xOffset, yOffset, newWidth, newHeight)
+                }
+
+                isWhite = !isWhite
+            }
+
+            //requests animation frame
+            function draw() {
+                volume = mic.volume
+                peak_vol = mic.peak_volume
+
+                if (volume < peak_vol - 20) {
+                    peaked = false
+                } else {
+                    peaked = true
+                }
+
+                ctx.background(0, map(volume, 0, 100, 0.2, 0.04))
+
+                drawSquares()
+                drawLogo()
+                colorify()
+            }
+        </script>
+
+        <script src="js/master.js" charset="utf-8"></script>
+    </body>
+</html>
