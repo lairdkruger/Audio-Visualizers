@@ -2,23 +2,23 @@ var TWO_PI = Math.PI * 2
 
 var p = CanvasRenderingContext2D.prototype
 
-p.colour = function(r, g, b, a) {
+p.colour = function (r, g, b, a) {
     'use strict'
     var c = this.getColour(r, g, b, a)
     this.fillStyle = c
 }
 
-p.lineColour = function(r, g, b, a) {
+p.lineColour = function (r, g, b, a) {
     console.log(r)
     this.strokeStyle = this.getColour(r, g, b, a)
 }
 
-p.colourName = function(c) {
+p.colourName = function (c) {
     'use strict'
     this.fillStyle = c
 }
 
-p.getColour = function(r, g, b, a) {
+p.getColour = function (r, g, b, a) {
     if (g == undefined) {
         c = rgb(r, r, r)
     } else if (b == undefined && a == undefined) {
@@ -32,34 +32,34 @@ p.getColour = function(r, g, b, a) {
     return c
 }
 
-p.makeCircle = function(x, y, radius) {
+p.makeCircle = function (x, y, radius) {
     'use strict'
     this.beginPath()
     this.arc(x, y, radius / 2, 0, Math.PI * 2, true)
 }
 
-p.circle = function(x, y, radius) {
+p.circle = function (x, y, radius) {
     'use strict'
     this.makeCircle(x, y, radius)
     this.fill()
     this.closePath()
 }
 
-p.fillCircle = function(x, y, radius) {
+p.fillCircle = function (x, y, radius) {
     'use strict'
     this.makeCircle(x, y, radius)
     this.fill()
     this.closePath()
 }
 
-p.strokeCircle = function(x, y, radius) {
+p.strokeCircle = function (x, y, radius) {
     'use strict'
     this.makeCircle(x, y, radius)
     this.stroke()
     this.closePath()
 }
 
-p.circleH = function(x, y, width, height) {
+p.circleH = function (x, y, width, height) {
     'use strict'
     if (height == undefined) {
         height = width
@@ -69,7 +69,7 @@ p.circleH = function(x, y, width, height) {
     this.closePath()
 }
 
-p.ellipse = function(x, y, width, height) {
+p.ellipse = function (x, y, width, height) {
     'use strict'
     if (height == undefined) {
         height = width
@@ -81,7 +81,7 @@ p.ellipse = function(x, y, width, height) {
     this.closePath()
 }
 
-p.Hellipse = function(x, y, width, height) {
+p.Hellipse = function (x, y, width, height) {
     'use strict'
     if (height == undefined) {
         height = width
@@ -93,7 +93,7 @@ p.Hellipse = function(x, y, width, height) {
     this.closePath()
 }
 
-p.fillEllipse = function(x, y, width, height) {
+p.fillEllipse = function (x, y, width, height) {
     'use strict'
     if (height == undefined) height = width
     this.ellipse(x, y, width, height)
@@ -101,21 +101,21 @@ p.fillEllipse = function(x, y, width, height) {
     this.beginPath()
 }
 
-p.HfillEllipse = function(x, y, width, height) {
+p.HfillEllipse = function (x, y, width, height) {
     if (height == undefined) height = width
     this.Hellipse(x, y, width, height)
     this.fill()
     this.beginPath()
 }
 
-p.strokeEllipse = function(x, y, width, height) {
+p.strokeEllipse = function (x, y, width, height) {
     if (height == undefined) height = width
     this.ellipse(x, y, width, height)
     this.stroke()
     this.beginPath()
 }
 
-p.HstrokeEllipse = function(x, y, width, height) {
+p.HstrokeEllipse = function (x, y, width, height) {
     if (height == undefined) {
         height = width
     }
@@ -124,20 +124,32 @@ p.HstrokeEllipse = function(x, y, width, height) {
     this.beginPath()
 }
 
-p.square = function(x, y, width, height) {
+p.square = function (x, y, width, height) {
     if (height == undefined) height = width
     this.fillRect(x, y, width, height)
 }
 
-p.centreStrokeRect = function(x, y, width, height) {
+p.centreStrokeRect = function (x, y, width, height) {
     this.strokeRect(x - width / 2, y - height / 2, width, height)
 }
 
-p.centreFillRect = function(x, y, width, height) {
+p.centreStrokeRectRotated = function (x, y, width, height, rotation) {
+    var cx = x
+    var cy = y
+    this.translate(cx, cy) //translate to center of shape
+    this.rotate((Math.PI / 180) * rotation) //rotate
+    this.translate(-cx, -cy) //translate center back to 0,0
+    this.strokeRect(x - width / 2, y - height / 2, width, height)
+    this.translate(cx, cy) //translate to center of shape
+    this.rotate(-(Math.PI / 180) * rotation) //rotate
+    this.translate(-cx, -cy) //translate center back to 0,0
+}
+
+p.centreFillRect = function (x, y, width, height) {
     this.fillRect(x - width / 2, y - height / 2, width, height)
 }
 
-p.roundRect = function(_x, _y, _width, _height, _radius, _fill, _stroke) {
+p.roundRect = function (_x, _y, _width, _height, _radius, _fill, _stroke) {
     _fill = _fill || true
     _stroke = _stroke || false
     _width = Math.abs(_width)
@@ -172,7 +184,7 @@ p.roundRect = function(_x, _y, _width, _height, _radius, _fill, _stroke) {
     }
 }
 
-p.line = function(x1, y1, x2, y2) {
+p.line = function (x1, y1, x2, y2) {
     this.beginPath()
     this.moveTo(x1, y1)
     this.lineTo(x2, y2)
@@ -180,24 +192,24 @@ p.line = function(x1, y1, x2, y2) {
     this.beginPath()
 }
 
-p.strokePolygon = function(x, y, sides, size) {
+p.strokePolygon = function (x, y, sides, size) {
     this.polygon(x, y, sides, size)
     this.stroke()
 }
 
-p.fillPolygon = function(x, y, sides, size) {
+p.fillPolygon = function (x, y, sides, size) {
     this.polygon(x, y, sides, size)
     this.fill()
 }
 
-p.outlinedPolygon = function(_x, _y, _sides, _size, _fill, _stroke) {
+p.outlinedPolygon = function (_x, _y, _sides, _size, _fill, _stroke) {
     this.fillStyle = _fill
     this.fillPolygon(_x, _y, _sides, _size)
     this.strokeStyle = _stroke
     this.strokePolygon(_x, _y, _sides, _size)
 }
 
-p.polygon = function(_x, _y, sides, size) {
+p.polygon = function (_x, _y, sides, size) {
     this.beginPath()
     this.moveTo(_x + size * Math.cos(0), _y + size * Math.sin(0))
     for (var i = 1; i <= sides; i += 1) {
@@ -208,11 +220,11 @@ p.polygon = function(_x, _y, sides, size) {
     }
 }
 
-p.strokeWeight = function(j) {
+p.strokeWeight = function (j) {
     this.lineWidth = j
 }
 
-p.triangle = function(x1, y1, x2, y2, x3, y3) {
+p.triangle = function (x1, y1, x2, y2, x3, y3) {
     'use strict'
     this.beginPath()
     this.moveTo(x1, y1)
@@ -223,7 +235,7 @@ p.triangle = function(x1, y1, x2, y2, x3, y3) {
     this.closePath()
 }
 
-p.strokeTriangle = function(x1, y1, x2, y2, x3, y3) {
+p.strokeTriangle = function (x1, y1, x2, y2, x3, y3) {
     this.beginPath()
     this.moveTo(x1, y1)
     this.lineTo(x2, y2)
@@ -233,7 +245,7 @@ p.strokeTriangle = function(x1, y1, x2, y2, x3, y3) {
     this.closePath()
 }
 
-p.fillTriangle = function(x1, y1, x2, y2, x3, y3) {
+p.fillTriangle = function (x1, y1, x2, y2, x3, y3) {
     this.beginPath()
     this.moveTo(x1, y1)
     this.lineTo(x2, y2)
@@ -243,7 +255,7 @@ p.fillTriangle = function(x1, y1, x2, y2, x3, y3) {
     this.closePath()
 }
 
-p.eqDownFillTriangle = function(x, y, sz, down) {
+p.eqDownFillTriangle = function (x, y, sz, down) {
     this.translate(x, y)
     this.rotate(radians(180))
     this.fillTriangle(0, 0 - sz, 0 + sz, 0 + sz / 2, 0 - sz, 0 + sz / 2)
@@ -251,7 +263,7 @@ p.eqDownFillTriangle = function(x, y, sz, down) {
     this.translate(-x, -y)
 }
 
-p.eqDownTriangle = function(x, y, sz, down) {
+p.eqDownTriangle = function (x, y, sz, down) {
     this.translate(x, y)
     this.rotate(radians(180))
     this.triangle(0, 0 - sz, 0 + sz, 0 + sz / 2, 0 - sz, 0 + sz / 2)
@@ -259,15 +271,15 @@ p.eqDownTriangle = function(x, y, sz, down) {
     this.translate(-x, -y)
 }
 
-p.eqFillTriangle = function(x, y, sz, down) {
+p.eqFillTriangle = function (x, y, sz, down) {
     this.fillTriangle(x, y - sz, x + sz, y + sz / 2, x - sz, y + sz / 2)
 }
 
-p.eqTriangle = function(x, y, sz, down) {
+p.eqTriangle = function (x, y, sz, down) {
     this.triangle(x, y - sz, x + sz, y + sz / 2, x - sz, y + sz / 2)
 }
 
-p.background = function(r, g, b, a) {
+p.background = function (r, g, b, a) {
     if (g == undefined) {
         this.fillStyle = rgb(r, r, r)
     } else if (b == undefined && a == undefined) {
@@ -280,11 +292,19 @@ p.background = function(r, g, b, a) {
     this.fillRect(0, 0, w, h)
 }
 
-p.rotateDegrees = function(deg) {
+p.rotateElement = function (x, y, width, height, deg) {
+    var cx = x
+    var cy = y
+    this.translate(cx, cy) //translate to center of shape
+    this.rotate((Math.PI / 180) * deg) //rotate 25 degrees.
+    this.translate(-cx, -cy) //translate center back to 0,0
+}
+
+p.rotateDegrees = function (deg) {
     this.rotate(radians(deg))
 }
 
-p.rotateDeg = function(deg) {
+p.rotateDeg = function (deg) {
     this.rotate(radians(deg))
 }
 
@@ -460,7 +480,7 @@ function rgbToHsl(r, g, b) {
 function hexToRgb(hex) {
     // Expand shorthand form (e.g. '03F') to full form (e.g. '0033FF')
     var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
-    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
         return r + r + g + g + b + b
     })
 
@@ -731,7 +751,7 @@ function Grid(_num_items_horiz, _num_items_vert, _grid_w, _grid_h, _startx, _sta
     this.x = []
     this.y = []
 
-    this.add = function(_horiz, _vert) {
+    this.add = function (_horiz, _vert) {
         this.num_items_horiz += _horiz || 1
         this.num_items_vert += _vert || 1
 
@@ -743,12 +763,12 @@ function Grid(_num_items_horiz, _num_items_vert, _grid_w, _grid_h, _startx, _sta
         return this
     }
 
-    this.setStart = function(_x, _y) {
+    this.setStart = function (_x, _y) {
         this.start = {x: _x || 0, y: _y || 0}
         createGrid()
     }
 
-    this.createGrid = function() {
+    this.createGrid = function () {
         for (var _y = 0; _y < this.num_items_vert; _y++) {
             for (var _x = 0; _x < this.num_items_horiz; _x++) {
                 this.x.push(_x * this.spacing_x + this.spacing_x / 2)
@@ -768,7 +788,7 @@ function colourPool() {
     this.weights = []
     this.colour_list = []
 
-    this.add = function(_colour, _weight) {
+    this.add = function (_colour, _weight) {
         if (_weight == undefined) _weight = 1
         this.colour_list.push(_colour)
         this.weights.push(_weight)
@@ -776,11 +796,11 @@ function colourPool() {
         return this
     }
 
-    this.get = function() {
+    this.get = function () {
         return this.pool[randomInt(this.pool.length - 1)]
     }
 
-    this.generateWeighedList = function(list, weight) {
+    this.generateWeighedList = function (list, weight) {
         var weighed_list = []
 
         // Loop over weights
@@ -801,7 +821,7 @@ function colourPool() {
 
 ////// EFFECTS
 
-p.pixelate = function(blocksize, blockshape) {
+p.pixelate = function (blocksize, blockshape) {
     if (blockshape == undefined) blockshape = 0
     if (blocksize == undefined) blocksize = 20
     var imgData = ctx.getImageData(0, 0, w, h)
@@ -1096,11 +1116,11 @@ function ScaleImage(srcwidth, srcheight, targetwidth, targetheight, fLetterBox) 
 
 var mousePressed = 0
 var mouseReleased = 0
-document.onmousedown = function() {
+document.onmousedown = function () {
     mousePressed = 1
     //window.mousePressed();
 }
-document.onmouseup = function() {
+document.onmouseup = function () {
     mousePressed = 0
     mouseReleased = 1
     //window.mouseup();
@@ -1145,7 +1165,7 @@ function cjsloop() {
 // requestAnimationFrame polyfill by Erik Möller
 // fixes from Paul Irish and Tino Zijdel
 
-;(function() {
+;(function () {
     var lastTime = 0
     var vendors = ['ms', 'moz', 'webkit', 'o']
     for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
@@ -1156,10 +1176,10 @@ function cjsloop() {
     }
 
     if (!window.requestAnimationFrame)
-        window.requestAnimationFrame = function(callback, element) {
+        window.requestAnimationFrame = function (callback, element) {
             var currTime = new Date().getTime()
             var timeToCall = Math.max(0, 16 - (currTime - lastTime))
-            var id = window.setTimeout(function() {
+            var id = window.setTimeout(function () {
                 callback(currTime + timeToCall)
             }, timeToCall)
             lastTime = currTime + timeToCall
@@ -1167,30 +1187,30 @@ function cjsloop() {
         }
 
     if (!window.cancelAnimationFrame)
-        window.cancelAnimationFrame = function(id) {
+        window.cancelAnimationFrame = function (id) {
             clearTimeout(id)
         }
 })()
 
 function init() {
-    window.addEventListener('mousemove', function(e) {
+    window.addEventListener('mousemove', function (e) {
         mouseX = e.clientX
         mouseY = e.clientY
         mouseMoved = true
     })
 
-    window.addEventListener('mousedown', function(e) {
+    window.addEventListener('mousedown', function (e) {
         mouseDown = true
         if (typeof onMouseDown == 'function') onMouseDown()
     })
-    window.addEventListener('mouseup', function(e) {
+    window.addEventListener('mouseup', function (e) {
         mouseDown = false
         if (typeof onMouseUp == 'function') onMouseUp()
     })
-    window.addEventListener('keydown', function(e) {
+    window.addEventListener('keydown', function (e) {
         if (typeof onKeyDown == 'function') onKeyDown(e)
     })
-    window.addEventListener('keyup', function(e) {
+    window.addEventListener('keyup', function (e) {
         if (typeof onKeyUp == 'function') onKeyUp(e)
     })
     if (typeof window.setup == 'function') window.setup()
